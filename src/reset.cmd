@@ -1,0 +1,1 @@
+openocd -f ./tools/wch-interface.cfg -f ./tools/wch-target.cfg -c init -c halt -c wlink_reset_resume -c exit

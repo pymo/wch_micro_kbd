@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "beforeBuildTasks": [],
+    "afterBuildTasks": [
+        {
+            "name": "output lst file",
+            "disable": false,
+            "abortAfterFailed": false,
+            "command": "riscv-none-embed-objdump --source --all-headers --demangle --disassemble \"${OutDir}\\${targetName}.elf\" > \"${OutDir}\\${targetName}.lst\"\n"
+        }
+    ],
+    "global": {
+        "output-debug-info": "enable",
+        "arch": "rv32imac",
+        "abi": "ilp32",
+        "code-model": "medany",
+        "misc-control": "-msmall-data-limit=8 -mno-save-restore"
+    },
+    "c/cpp-compiler": {
+        "language-c": "c99",
+        "language-cpp": "c++11",
+        "optimization": "level-size",
+        "warnings": "all-warnings",
+        "C_FLAGS": "-Wl,-Bstatic -ffunction-sections -fdata-sections -fmessage-length=0 -fsigned-char -fno-common"
+    },
+    "asm-compiler": {
+        "ASM_FLAGS": "-Wl,-Bstatic"
+    },
+    "linker": {
+        "output-format": "elf",
+        "LD_FLAGS": "-Wl,--cref -Wl,--gc-sections --specs=nosys.specs --specs=nano.specs -nostartfiles",
+        "LIB_FLAGS": "-lISP583 -lCH58xBLE",
+        "remove-unused-input-sections": true
+    }
+}

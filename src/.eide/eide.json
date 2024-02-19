@@ -1,0 +1,104 @@
+{
+  "name": "Three-mode_kbd",
+  "type": "RISC-V",
+  "dependenceList": [],
+  "srcDirs": [
+    "APP",
+    "drivers",
+    "include",
+    "soc",
+    "subsys",
+    "test",
+    "boards",
+    "LIB",
+    "Startup",
+    "StdPeriphDriver"
+  ],
+  "virtualFolder": {
+    "name": "<virtual_root>",
+    "files": [],
+    "folders": []
+  },
+  "outDir": "build",
+  "deviceName": null,
+  "packDir": null,
+  "miscInfo": {
+    "uid": "052fd63ae5f1a33079955d51a78a45ab"
+  },
+  "targets": {
+    "Debug": {
+      "excludeList": [
+        "../SRC/Ld",
+        "subsys/SPI_Flash",
+        "APP/obj"
+      ],
+      "toolchain": "RISCV_GCC",
+      "compileConfig": {
+        "linkerScriptPath": "soc/Link.ld",
+        "options": "null"
+      },
+      "uploader": "Custom",
+      "uploadConfig": {
+        "bin": "./build/Debug/test_ch583m.hex",
+        "commandLine": "download.cmd ${hexFile}",
+        "eraseChipCommand": ""
+      },
+      "uploadConfigMap": {
+        "JLink": {
+          "bin": "",
+          "baseAddr": "0x08000000",
+          "cpuInfo": {
+            "vendor": "ST",
+            "cpuName": "STM32F103C8"
+          },
+          "proType": 1,
+          "speed": 8000,
+          "otherCmds": ""
+        },
+        "OpenOCD": {
+          "bin": "${ExecutableName}.hex",
+          "target": "${workspaceFolder}/tools/wch-riscv",
+          "interface": "${workspaceFolder}/tools/wch-interface",
+          "baseAddr": "0x08000000"
+        },
+        "Custom": {
+          "bin": "./build/Debug/ch582_demo.hex",
+          "commandLine": "test.sh ./build/Debug/ch582_demo.hex"
+        }
+      },
+      "custom_dep": {
+        "name": "default",
+        "incList": [
+          "drivers",
+          "subsys",
+          "StdPeriphDriver/inc",
+          "include",
+          "APP",
+          "arch",
+          "boards",
+          "LIB",
+          "soc",
+          "Startup",
+          "StdPeriphDriver",
+          "subsys/HAL",
+          "APP/src",
+          "subsys/BLE/profile",
+          "subsys/BLE",
+          "test"
+        ],
+        "libList": [
+          "LIB",
+          "StdPeriphDriver"
+        ],
+        "sourceDirList": [],
+        "defineList": [
+          "DEBUG=1",
+          "CLK_OSC32K=1",
+          "CONFIG_RISCV",
+          "LOG"
+        ]
+      }
+    }
+  },
+  "version": "3.3"
+}
