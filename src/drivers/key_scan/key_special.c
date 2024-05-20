@@ -19,19 +19,15 @@
 #include "mode/mode.h"
 #include "key_parse.h"
 #include "sys/util.h"
+#include "key_codes.h"
 
 enum special_key_flag {
-    SPECIAL_KEY_MODE_RF24,
-    SPECIAL_KEY_MODE_BLE,
-    SPECIAL_KEY_MODE_USB,
-    SPECIAL_KEY_MODE_TEST,
-    SPECIAL_KEY_RF_PAIR,
-    SPECIAL_KEY_VOL_MUTE,
     SPECIAL_KEY_VOL_DEC,
     SPECIAL_KEY_VOL_INC,
-    SPECIAL_KEY_LED_ENH,
-    SPECIAL_KEY_LED_WEAK,
-    SPECIAL_KEY_LED_SWIT,
+    SPECIAL_KEY_BRIGHTNESS_DEC,
+    SPECIAL_KEY_BRIGHTNESS_INC,
+    SPECIAL_KEY_BACK,
+    SPECIAL_KEY_MODE_USB,
     SPECIAL_KEY_BLE_CHAN_1,
     SPECIAL_KEY_BLE_CHAN_2,
     SPECIAL_KEY_BLE_CHAN_3,
@@ -60,19 +56,23 @@ struct special_handler {
 uint8_t key_spe_taskid = 0;
 
 static const uint8_t special_key_map[SPECIAL_KEY_NUM] = {
-//  Scroll-Lock, Print-screen, Pause, 0, 5
-    0x47, 0x46, 0x48, 0x27, 0x22, 
-//  Mute, Decre, Incre
-    0x3a, 0x3b, 0x3c,
-//  F6,   F7,   F8 
-    0x3f, 0x40, 0x41,
-//  1,    2,    3,    4
-    0x1e, 0x1f, 0x20, 0x21
+        HID_KEY_P,  // SPECIAL_KEY_VOL_DEC,
+        HID_KEY_SEMICOLON,  // SPECIAL_KEY_VOL_INC,
+        HID_KEY_COMMA,  // SPECIAL_KEY_BRIGHTNESS_DEC,
+        HID_KEY_PERIOD,  // SPECIAL_KEY_BRIGHTNESS_INC,
+        HID_KEY_WWW_HOME,  // SPECIAL_KEY_BACK,
+        HID_KEY_M,  // SPECIAL_KEY_MODE_USB
+        HID_KEY_J,  // SPECIAL_KEY_BLE_CHAN_1,
+        HID_KEY_K,  // SPECIAL_KEY_BLE_CHAN_2,
+        HID_KEY_L,  // SPECIAL_KEY_BLE_CHAN_3,
+        HID_KEY_U,  // SPECIAL_KEY_BLE_CHAN_4,
 };
 
+void send_hid_key(struct speical_data *data, uint8_t usage_id)
+{
 
-
-
+}
+/*
 static void mode_rf24(struct speical_data *data)
 {
     if (data->key_state) {
@@ -89,7 +89,6 @@ static void mode_rf24(struct speical_data *data)
 
     mode_select(device_mode);
 }
-
 static void mode_ble(struct speical_data *data)
 {
     if (data->key_state) {
@@ -106,20 +105,6 @@ static void mode_ble(struct speical_data *data)
 
     mode_select(device_mode);
 }
-
-static void mode_usb(struct speical_data *data)
-{
-    if (device_mode == MODE_USB)
-    {
-        return ;
-    }
-
-    device_mode = MODE_USB;
-    SaveDeviceInfo("device_mode");
-
-    mode_select(device_mode);
-}
-
 static void mode_test(struct speical_data *data)
 {
     ARG_UNUSED(data);
@@ -137,7 +122,21 @@ static void rf_pair(struct speical_data *data)
     }
 }
 
-static void vol_mute(struct speical_data *data)
+*/
+static void mode_usb(struct speical_data *data)
+{
+    if (device_mode == MODE_USB)
+    {
+        return ;
+    }
+
+    device_mode = MODE_USB;
+    SaveDeviceInfo("device_mode");
+
+    mode_select(device_mode);
+}
+
+void send_consumer_key(struct speical_data *data, uint16_t usage_id)
 {
     uint8_t buf[2] = {0};
     uint8_t report_id = CONSUME_ID;
@@ -149,7 +148,8 @@ static void vol_mute(struct speical_data *data)
     PRINT("%s: %s\n", __FUNCTION__, data->key_state ? "pressed" : "released");
 
     if (data->key_state) {
-        buf[0] = 0xe2;
+        buf[0] = LO_UINT16(usage_id);
+        buf[1] = HI_UINT16(usage_id);
     }
 
     if(lwrb_get_free(&KEY_buff) >= (2 + 1)) {
@@ -158,48 +158,27 @@ static void vol_mute(struct speical_data *data)
     }
 }
 
-static void vol_dec(struct speical_data *data)
-{
-    uint8_t buf[2] = {0};
-    uint8_t report_id = CONSUME_ID;
-
-    if (data->long_key_flag) {
-        return ;
-    }
-
-    PRINT("%s: %s\n", __FUNCTION__, data->key_state ? "pressed" : "released");
-
-    if (data->key_state) {
-        buf[0] = 0xea;
-    }
-
-    if(lwrb_get_free(&KEY_buff) >= (2 + 1)) {
-        lwrb_write(&KEY_buff, &report_id, 1);
-        lwrb_write(&KEY_buff, buf, 2);
-    }
+static void vol_dec(struct speical_data *data){
+    send_consumer_key(data, HID_USAGE_CONSUMER_VOLUME_DEC);
 }
 
-static void vol_inc(struct speical_data *data)
-{
-    uint8_t buf[2] = {0};
-    uint8_t report_id = CONSUME_ID;
-
-    if (data->long_key_flag) {
-        return ;
-    }
-
-    PRINT("%s: %s\n", __FUNCTION__, data->key_state ? "pressed" : "released");
-
-    if (data->key_state) {
-        buf[0] = 0xe9;
-    }
-
-    if(lwrb_get_free(&KEY_buff) >= (2 + 1)) {
-        lwrb_write(&KEY_buff, &report_id, 1);
-        lwrb_write(&KEY_buff, buf, 2);
-    }
+static void vol_inc(struct speical_data *data){
+    send_consumer_key(data, HID_USAGE_CONSUMER_VOLUME_INC);
 }
 
+static void brightness_dec(struct speical_data *data){
+    send_consumer_key(data, HID_USAGE_CONSUMER_BRIGHTNESS_DEC);
+}
+
+static void brightness_inc(struct speical_data *data){
+    send_consumer_key(data, HID_USAGE_CONSUMER_BRIGHTNESS_INC);
+}
+
+static void www_back(struct speical_data *data){
+    send_consumer_key(data, HID_USAGE_CONSUMER_WWW_BACK);
+}
+
+/*
 static void led_enh(struct speical_data *data)
 {
     if (!data->key_state) {
@@ -242,19 +221,31 @@ static void led_swit(struct speical_data *data)
         SaveDeviceInfo("device_led");
     }  
 }
-
-static void ble_chan_1(struct speical_data *data)
+*/
+void switch_ble_channel(struct speical_data *data, uint8_t channel)
 {
-    if (device_mode != MODE_BLE) {
+    bool needs_mode_change = false;
+    if (channel > 4) {
         return ;
     }
+    if (data->key_state) {
+        return ;
+    }
+
+    if (device_mode != MODE_BLE)
+    {
+        device_mode = MODE_BLE;
+        SaveDeviceInfo("device_mode");
+        needs_mode_change = true;
+    }
+
     PRINT("%s: %s\n", __FUNCTION__, data->long_key_flag ? "long" : "short");
     PRINT("%s: %s\n", __FUNCTION__, data->key_state ? "pressed" : "released");
 
     if (data->long_key_flag) {
         ef_get_env_blob("device_bond", &device_bond, sizeof(device_bond), NULL);
 
-        PRINT("Channel 1 current MAC: ( ");
+        PRINT("Channel %d current MAC: ( ", channel);
 
         for (int i = 0; i < 6; i++) {
             PRINT("%#x ", device_bond.ID[0].local_addr[i]);
@@ -264,143 +255,43 @@ static void ble_chan_1(struct speical_data *data)
         device_bond.ID[0].isbond = false;
         device_bond.ID_Num = 0;
         device_bond.ID[0].local_addr[2]++;
+        needs_mode_change = true;
 
     } else {
         /* clear MAC++ if long key pressed */
         ReadDeviceInfo("device_bond");
 
-        if (device_bond.ID_Num == 0) {
-            return ;
+        if (device_bond.ID_Num != channel-1) {
+            device_bond.ID_Num = channel-1;
+            SaveDeviceInfo("device_bond");
+            needs_mode_change = true;
         }
-
-        device_bond.ID_Num = 0;
-        SaveDeviceInfo("device_bond");
     }
-    mode_select(MODE_BLE);
+    if(needs_mode_change) mode_select(MODE_BLE);
 }
 
-static void ble_chan_2(struct speical_data *data)
-{
-    if (device_mode != MODE_BLE) {
-        return ;
-    }
-
-    PRINT("%s: %s\n", __FUNCTION__, data->long_key_flag ? "long" : "short");
-    PRINT("%s: %s\n", __FUNCTION__, data->key_state ? "pressed" : "released");
-
-    if (data->long_key_flag) {
-        ef_get_env_blob("device_bond", &device_bond, sizeof(device_bond), NULL);
-
-        PRINT("Channel 2 current MAC: ( ");
-
-        for (int i = 0; i < 6; i++) {
-            PRINT("%#x ", device_bond.ID[1].local_addr[i]);
-        }
-        PRINT(")\n");
-
-        device_bond.ID[1].isbond = false;
-        device_bond.ID_Num = 1;
-        device_bond.ID[1].local_addr[2]++;
-    } else {
-        /* clear MAC++ if long key pressed */
-        ReadDeviceInfo("device_bond");
-
-        if (device_bond.ID_Num == 1) {
-            return ;
-        }
-
-        device_bond.ID_Num = 1;
-        SaveDeviceInfo("device_bond");
-    }
-
-    mode_select(MODE_BLE);  
+static void ble_chan_1(struct speical_data *data){
+    switch_ble_channel(data, 1);
+}
+static void ble_chan_2(struct speical_data *data){
+    switch_ble_channel(data, 2);
 }
 
-static void ble_chan_3(struct speical_data *data)
-{
-    if (device_mode != MODE_BLE) {
-        return ;
-    }
-
-    PRINT("%s: %s\n", __FUNCTION__, data->long_key_flag ? "long" : "short");
-    PRINT("%s: %s\n", __FUNCTION__, data->key_state ? "pressed" : "released");
-
-    if (data->long_key_flag) {
-        ef_get_env_blob("device_bond", &device_bond, sizeof(device_bond), NULL);
-
-        PRINT("Channel 3 current MAC: ( ");
-
-        for (int i = 0; i < 6; i++) {
-            PRINT("%#x ", device_bond.ID[2].local_addr[i]);
-        }
-        PRINT(")\n");
-
-        device_bond.ID[2].isbond = false;
-        device_bond.ID_Num = 2;
-        device_bond.ID[2].local_addr[2]++;
-    } else {
-        /* clear MAC++ if long key pressed */
-        ReadDeviceInfo("device_bond");
-
-        if (device_bond.ID_Num == 2) {
-            return ;
-        }
-
-        device_bond.ID_Num = 2;
-        SaveDeviceInfo("device_bond");
-    }
-
-    mode_select(MODE_BLE);  
+static void ble_chan_3(struct speical_data *data){
+    switch_ble_channel(data, 3);
 }
 
-static void ble_chan_4(struct speical_data *data)
-{
-    if (device_mode != MODE_BLE) {
-        return ;
-    }
-
-    PRINT("%s: %s\n", __FUNCTION__, data->long_key_flag ? "long" : "short");
-    PRINT("%s: %s\n", __FUNCTION__, data->key_state ? "pressed" : "released");
-
-    if (data->long_key_flag) {
-        ef_get_env_blob("device_bond", &device_bond, sizeof(device_bond), NULL);
-
-        PRINT("Channel 4 current MAC: ( ");
-
-        for (int i = 0; i < 6; i++) {
-            PRINT("%#x ", device_bond.ID[3].local_addr[i]);
-        }
-        PRINT(")\n");
-
-        device_bond.ID[3].isbond = false;
-        device_bond.ID_Num = 3;
-        device_bond.ID[3].local_addr[2]++;
-    } else {
-        /* clear MAC++ if long key pressed */
-        ReadDeviceInfo("device_bond");
-
-        if (device_bond.ID_Num == 3) {
-            return ;
-        }
-
-        device_bond.ID_Num = 3;
-        SaveDeviceInfo("device_bond");
-    }
-    mode_select(MODE_BLE);    
+static void ble_chan_4(struct speical_data *data){
+    switch_ble_channel(data, 4);
 }
 
 static const struct special_handler handler[] = {
-    SPECIAL_HANDLER(SPECIAL_KEY_MODE_RF24, mode_rf24),
-    SPECIAL_HANDLER(SPECIAL_KEY_MODE_BLE, mode_ble),
-    SPECIAL_HANDLER(SPECIAL_KEY_MODE_USB, mode_usb),
-    SPECIAL_HANDLER(SPECIAL_KEY_MODE_TEST, mode_test),
-    SPECIAL_HANDLER(SPECIAL_KEY_RF_PAIR, rf_pair),
-    SPECIAL_HANDLER(SPECIAL_KEY_VOL_MUTE, vol_mute),
     SPECIAL_HANDLER(SPECIAL_KEY_VOL_DEC, vol_dec),
     SPECIAL_HANDLER(SPECIAL_KEY_VOL_INC, vol_inc),
-    SPECIAL_HANDLER(SPECIAL_KEY_LED_ENH, led_enh),
-    SPECIAL_HANDLER(SPECIAL_KEY_LED_WEAK, led_weak),
-    SPECIAL_HANDLER(SPECIAL_KEY_LED_SWIT, led_swit),
+    SPECIAL_HANDLER(SPECIAL_KEY_BRIGHTNESS_DEC, brightness_dec),
+    SPECIAL_HANDLER(SPECIAL_KEY_BRIGHTNESS_INC, brightness_inc),
+    SPECIAL_HANDLER(SPECIAL_KEY_BACK, www_back),
+    SPECIAL_HANDLER(SPECIAL_KEY_MODE_USB, mode_usb),
     SPECIAL_HANDLER(SPECIAL_KEY_BLE_CHAN_1, ble_chan_1),
     SPECIAL_HANDLER(SPECIAL_KEY_BLE_CHAN_2, ble_chan_2),
     SPECIAL_HANDLER(SPECIAL_KEY_BLE_CHAN_3, ble_chan_3),
@@ -416,7 +307,7 @@ static inline uint8_t is_speical_key(uint8_t *keys_8, uint8_t *key_list_special)
     uint8_t num = 0;
     /* is fn pressed */
     if (key_fn_flag) {
-        key_fn_flag = 0;
+        //key_fn_flag = 0;
 
         for (key_idx = 2; key_idx < 8; key_idx++) {
             // 键值为0 则后面无更多键值
@@ -496,8 +387,8 @@ bool special_key_handler(uint8_t *keys_8, bool is_long)
 
     } else {
         spk_flag_before = 0;
-        
-        // 无特殊键， 若特殊键未上传释放键则上传
+
+        // Release the special keys if none is pressed
         if (saved_flag < SPECIAL_KEY_NUM) {
             data.key_state = false;
             data.long_key_flag = is_long;
@@ -508,22 +399,36 @@ bool special_key_handler(uint8_t *keys_8, bool is_long)
 
     }
 
-    // 去除中间0
-    for(int i = 2; i < 8; i++) {
-        if (!keys_8[i]) {
-            for (int j = i + 1; j < 8; j++) {
-                if (keys_8[j]) {
-                    keys_8[i] = keys_8[j];
-                    keys_8[j] = 0;
-                    break;
-                }
-            }
-        }
-    }
+    // Get rid of 0s in the middle
+    CompactIntegers(keys_8+2,6);
 
     return true;
 }
 
-
+void handle_first_layer_special_key(uint8_t *keys_8, bool is_long){
+    bool special_key_pressed = false;
+    static bool special_key_previously_pressed = false;
+    for(int i = 2; i < 8; i++) {
+        if (keys_8[i]==HID_KEY_WWW_HOME) {
+            struct speical_data data = {0};
+            data.key_state = true;
+            data.long_key_flag = is_long;
+            send_consumer_key(&data, HID_USAGE_CONSUMER_WWW_HOME);
+            keys_8[i]=0;
+            special_key_pressed = true;
+            special_key_previously_pressed = true;
+        }
+    }
+    // Release the special keys if none is pressed
+    if(!special_key_pressed && special_key_previously_pressed){
+        struct speical_data data = {0};
+        data.key_state = false;
+        data.long_key_flag = is_long;
+        send_consumer_key(&data, HID_USAGE_CONSUMER_WWW_HOME);
+        special_key_previously_pressed = false;
+    }
+    // Get rid of 0s in the middle
+    CompactIntegers(keys_8+2,6);
+}
 
 

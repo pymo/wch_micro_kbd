@@ -129,13 +129,13 @@ static uint8_t scanRspData[] = {
     LO_UINT16(HID_SERV_UUID),
     HI_UINT16(HID_SERV_UUID),
 
-    0x07,
+    0x0F,
     GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-    'M', 'K', '0', '0' , '_' , '0'
+    'P', 'D', 'A', ' ' , 'K', 'e', 'y', 'b', 'o', 'a', 'r' , 'd', ' ', '1'
 };
 
 // Device name attribute value
-static  uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "MK00_0";
+static  uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "PDA Keyboard 1";
 
 // HID Dev configuration
 static hidDevCfg_t hidEmuCfg = {
@@ -249,10 +249,8 @@ bool bt_adv_data_init(void) {
         }
     }
     else{
-        scanRspData[16] = '0' + ID_Num;
-        scanRspData[18] = '0' + ID_Num;
-        attDeviceName[3] = '0' + ID_Num;
-        attDeviceName[5] = '0' + ID_Num;
+        scanRspData[26] = '1' + ID_Num;
+        attDeviceName[13] = '1' + ID_Num;
 
         GAPRole_SetParameter( GAPROLE_ADVERT_DATA, sizeof(advertData), advertData);
         GAPRole_SetParameter( GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData),
@@ -362,6 +360,9 @@ void HidEmu_Unit(void)
     hidEmuTaskId = 0;
 }
 
+bool isNonRetryableResult(uint8_t ret){
+    return ret == 0 || ret == bleNotReady;
+}
 /*********************************************************************
  * @fn      HidEmu_ProcessEvent
  *
@@ -475,7 +476,7 @@ uint16 HidEmu_ProcessEvent(uint8 task_id, uint16 events)
                 ret = HidDev_Report( HID_RPT_ID_KEY_IN, HID_REPORT_TYPE_INPUT,
                         8, keyVal);
                 PRINT("Status:%x\n\r",ret);
-                if (ret == 0) {
+                if (isNonRetryableResult(ret)) {
                     lwrb_skip(&KEY_buff, 8 + 1);
                 }
 
@@ -490,7 +491,7 @@ uint16 HidEmu_ProcessEvent(uint8 task_id, uint16 events)
                 ret = HidDev_Report( HID_RPT_ID_KEYBIT_IN, HID_REPORT_TYPE_INPUT,
                         15, &keyVal[1]);
                 PRINT("Status:%x\n\r",ret);
-                if (ret == 0) {
+                if (isNonRetryableResult(ret)) {
                     lwrb_skip(&KEY_buff, 16 + 1);
                 }
 
@@ -506,7 +507,7 @@ uint16 HidEmu_ProcessEvent(uint8 task_id, uint16 events)
                 ret = HidDev_Report( HID_RPT_ID_SYS_IN, HID_REPORT_TYPE_INPUT,
                         2, keyVal);
                 PRINT("Status:%x\n\r",ret);
-                if (ret == 0) {
+                if (isNonRetryableResult(ret)) {
                     lwrb_skip(&KEY_buff, 2 + 1);
                 }
 
@@ -521,9 +522,9 @@ uint16 HidEmu_ProcessEvent(uint8 task_id, uint16 events)
                 ret = HidDev_Report( HID_RPT_ID_KEYCONSUME_IN, HID_REPORT_TYPE_INPUT,
                         2, keyVal);
                 PRINT("Status:%x\n\r",ret);
-                //if (ret == 0) {
+                if (isNonRetryableResult(ret)) {
                     lwrb_skip(&KEY_buff, 2 + 1);
-                //}
+                }
 
             } else if (report_id == VENDOR_ID) {
 
@@ -538,7 +539,7 @@ uint16 HidEmu_ProcessEvent(uint8 task_id, uint16 events)
 
                 ret = HidDev_Report( HID_RPT_ID_MOUSE_IN, HID_REPORT_TYPE_INPUT,
                         4, keyVal);PRINT("Status:%x\n\r",ret);
-                if (ret == 0) {
+                if (isNonRetryableResult(ret)) {
                     lwrb_skip(&KEY_buff, 2 + 1);
                 }
 

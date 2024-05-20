@@ -8,15 +8,20 @@
 #include "key_table.h"
 #include "CH58x_common.h"
 
-bool key_fn_flag = false;
+bool key_fn_flag;
 
 void keymap_to_keybuf8(uint8_t *index, uint8_t *keyVal, uint8_t len)
 {
     for (int i = 0, idx = 0; i < len; i++)
     {
+        if (index[i]>sizeof(key8_table)){
+            PRINT("raw keycode %#x out of range!\n", index[i]);
+            continue;
+        }
+        //PRINT("%d -> %#x\n", index[i], key8_table[index[i]]);
         if (!key8_table[index[i]])
             continue;
-        keyVal[2 + idx++] = key8_table[index[i]];
+        keyVal[idx++] = key8_table[index[i]];
     }
 }
 
@@ -54,69 +59,118 @@ uint8_t CompactIntegers(uint8_t *buf, uint8_t len)
     return new_len;
 }
 
-bool hotkeydeal(uint8_t *index, uint8_t *keys, uint8_t nums)
+void ModifierKeyHandler(uint8_t *hid_keycodes, uint8_t *keys, uint8_t nums)
 {
-    bool ret = false;
-    for (int i = 0; i < nums; i++)
+    key_fn_flag = false;
+    for (uint8_t i = 0; i < nums; ++i)
     {
-        if (index[i] == 5) // shift-l
-        {
-            keys[0] |= key8_table[index[i]];
-            index[i] = 0;
-            ret = true;
-        }
-        if (index[i] == 82) // shift-r
-        {
-            keys[0] |= key8_table[index[i]];
-            index[i] = 0;
-            ret = true;
-        }
-        if (index[i] == 6) // ctrl-l
-        {
-            keys[0] |= key8_table[index[i]];
-            index[i] = 0;
-            ret = true;
-        }
-        if (index[i] == 13) // winl
-        {
-            keys[0] |= key8_table[index[i]];
-            index[i] = 0;
-            ret = true;
-        }
-        if (index[i] == 20) // altl
-        {
-            keys[0] |= key8_table[index[i]];
-            index[i] = 0;
-            ret = true;
-        }
-        if (index[i] == 34) // altr
-        {
-            keys[0] |= key8_table[index[i]];
-            index[i] = 0;
-            ret = true;
-        }
-        if (index[i] == 55) // winr
-        {
-            keys[0] |= key8_table[index[i]];
-            index[i] = 0;
-            ret = true;
-        }
-        if (index[i] == 62) // ctrr
-        {
-            keys[0] |= key8_table[index[i]];
-            index[i] = 0;
-            ret = true;
-        }
-
-        if (index[i] == 41) // Fn
-        {
-            // keys[0] = key8_table[index[i]];
+        switch (hid_keycodes[i]){
+        case HID_KEY_CONTROL_LEFT:
+            keys[0] |= KEYBOARD_MODIFIER_LEFTCTRL;
+            hid_keycodes[i] = 0;
+            break;
+        case HID_KEY_SHIFT_LEFT:
+            keys[0] |= KEYBOARD_MODIFIER_LEFTSHIFT;
+            hid_keycodes[i] = 0;
+            break;
+        case HID_KEY_ALT_LEFT:
+            keys[0] |= KEYBOARD_MODIFIER_LEFTALT;
+            hid_keycodes[i] = 0;
+            break;
+        case HID_KEY_GUI_LEFT:
+            keys[0] |= KEYBOARD_MODIFIER_LEFTGUI;
+            hid_keycodes[i] = 0;
+            break;
+        case HID_KEY_CONTROL_RIGHT:
+            keys[0] |= KEYBOARD_MODIFIER_RIGHTCTRL;
+            hid_keycodes[i] = 0;
+            break;
+        case HID_KEY_SHIFT_RIGHT:
+            keys[0] |= KEYBOARD_MODIFIER_RIGHTSHIFT;
+            hid_keycodes[i] = 0;
+            break;
+        case HID_KEY_ALT_RIGHT:
+            keys[0] |= KEYBOARD_MODIFIER_RIGHTALT;
+            hid_keycodes[i] = 0;
+            break;
+        case HID_KEY_GUI_RIGHT:
+            keys[0] |= KEYBOARD_MODIFIER_RIGHTGUI;
+            hid_keycodes[i] = 0;
+            break;
+        case HID_KEY_FN:
             key_fn_flag = true;
-            index[i] = 0;
+            hid_keycodes[i] = 0;
+            break;
+        default:
+            break;
         }
     }
+}
 
-    return ret;
+// If Fn+key is mapped to another HID key (i.e. not consumer or special function), handle it here, otherwise handle it in key_special.c
+void FnHidKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
+    if (!key_fn_flag) return;
+    for (uint8_t i = 0; i < nums; ++i)
+    {
+        switch (hid_keycodes[i]){
+        case HID_KEY_TAB:
+            hid_keycodes[i] = HID_KEY_ESCAPE;
+            break;
+        case HID_KEY_ARROW_UP:
+            hid_keycodes[i] = HID_KEY_PAGE_UP;
+            break;
+        case HID_KEY_ARROW_DOWN:
+            hid_keycodes[i] = HID_KEY_PAGE_DOWN;
+            break;
+        case HID_KEY_ARROW_LEFT:
+            hid_keycodes[i] = HID_KEY_HOME;
+            break;
+        case HID_KEY_ARROW_RIGHT:
+            hid_keycodes[i] = HID_KEY_END;
+            break;
+        case HID_KEY_DELETE:
+            hid_keycodes[i] = HID_KEY_INSERT;
+            break;
+        case HID_KEY_1:
+            hid_keycodes[i] = HID_KEY_F1;
+            break;
+        case HID_KEY_2:
+            hid_keycodes[i] = HID_KEY_F2;
+            break;
+        case HID_KEY_3:
+            hid_keycodes[i] = HID_KEY_F3;
+            break;
+        case HID_KEY_4:
+            hid_keycodes[i] = HID_KEY_F4;
+            break;
+        case HID_KEY_5:
+            hid_keycodes[i] = HID_KEY_F5;
+            break;
+        case HID_KEY_6:
+            hid_keycodes[i] = HID_KEY_F6;
+            break;
+        case HID_KEY_7:
+            hid_keycodes[i] = HID_KEY_F7;
+            break;
+        case HID_KEY_8:
+            hid_keycodes[i] = HID_KEY_F8;
+            break;
+        case HID_KEY_9:
+            hid_keycodes[i] = HID_KEY_F9;
+            break;
+        case HID_KEY_0:
+            hid_keycodes[i] = HID_KEY_F10;
+            break;
+        case HID_KEY_MINUS:
+            hid_keycodes[i] = HID_KEY_F11;
+            break;
+        case HID_KEY_EQUAL:
+            hid_keycodes[i] = HID_KEY_F12;
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 int key_parse(uint8_t *key_map, uint8_t num, uint8_t key8[8], uint8_t key16[16])
@@ -126,10 +180,11 @@ int key_parse(uint8_t *key_map, uint8_t num, uint8_t key8[8], uint8_t key16[16])
     static uint8_t last_key_16[16] = {0};
     uint8_t key8_num = 0, key16_num = 0;
 
-    hotkeydeal(key_map, key8, num);
     keymap_to_keybuf8(key_map, current_key, num);
+    ModifierKeyHandler(current_key, key8, num);
+    FnHidKeyHandler(current_key, num);
 
-    uint8_t remain_num = CompactIntegers(current_key, sizeof(current_key));
+    uint8_t remain_num = CompactIntegers(current_key, num);
 
     /* 对比上次传输的键值，若此次仍存在，则使用上次的传输方式 */
     for(int key_idx = 0; key_idx < remain_num; key_idx++) {

@@ -265,6 +265,8 @@
 
 /* Consumer Page (0x0C) */
 #define HID_USAGE_CONSUMER_CONTROL                          0x01
+#define HID_USAGE_CONSUMER_BRIGHTNESS_INC                   0x6F
+#define HID_USAGE_CONSUMER_BRIGHTNESS_DEC                   0x70
 #define HID_USAGE_CONSUMER_PLAY                                 0xB0
 #define HID_USAGE_CONSUMER_PAUSE                                0xB1
 #define HID_USAGE_CONSUMER_SCAN_NEXT_TRACK          0xB5

@@ -11,114 +11,154 @@
 
 #include "backlight/backlight.h"
 
-static const uint32_t IOmap[] = {
-    1 << 4, 1 << 5, 1 << 6, 1 << 7, 1 << 14, 1 << 15, 1 << 16, 
-    1 << 17, 1 << 8, 1 << 9, 1 << 8, 1 << 18, 1 << 19, 1 << 20,
-    1 << 21, 1 << 22, 1 << 23
-};
-
 __HIGH_CODE
 void RstAllPins(void)
-{
+{/*
     for (uint8_t i = 0; i < 17; i++)
     {
         i == 10 ? GPIOA_ResetBits(IOmap[i]) : GPIOB_ResetBits(IOmap[i]);
-    }
+    }*/
 }
 
 __HIGH_CODE
 void SetAllPins(void)
-{
+{/*
     for (uint8_t i = 0; i < 17; i++)
     {
         i == 10 ? GPIOA_SetBits(IOmap[i]) : GPIOB_SetBits(IOmap[i]);
-    }
+    }*/
 }
 
 void keyInit(void)
 {
-    GPIOA_ModeCfg(
-        GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5,
-        GPIO_ModeIN_PU);
-    SetAllPins();
-    GPIOA_ModeCfg(GPIO_Pin_8, GPIO_ModeOut_PP_5mA);
-    GPIOB_ModeCfg(
-        GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 |
-            GPIO_Pin_14 | GPIO_Pin_15 | GPIO_Pin_16 | GPIO_Pin_17 | GPIO_Pin_18 |
-            GPIO_Pin_19 | GPIO_Pin_20 | GPIO_Pin_21 | GPIO_Pin_22 | GPIO_Pin_23,
-        GPIO_ModeOut_PP_5mA);
+    /* 配置串口0：先配置IO口模式，再配置串口 */
+    GPIOB_SetBits(GPIO_Pin_7);
+    GPIOB_ModeCfg(GPIO_Pin_4, GPIO_ModeIN_PU);      // RXD-配置上拉输入
+    GPIOB_ModeCfg(GPIO_Pin_7, GPIO_ModeOut_PP_5mA); // TXD-配置推挽输出，注意先让IO口输出高电平
+    UART0_DefInit();
+    UART0_BaudRateCfg(9600);
+
+    GPIOA_ModeCfg(RTS_PIN|DCD_PIN, GPIO_ModeIN_Floating);
+    GPIOB_SetBits(VCC_PIN);
+    GPIOB_ModeCfg(VCC_PIN, GPIO_ModeOut_PP_5mA); // VCC_CTL配置推挽输出，注意先让IO口输出高电平
+    DelayMs(1500);
+    GPIOB_ResetBits(VCC_PIN);
+    PRINT("beginning keyboard boot sequence...\n");
+    while (!GPIOA_ReadPortPin(DCD_PIN)) {
+      DelayMs(1);
+    };
+    PRINT("DCD_PIN response done.\n");
+    if (!GPIOA_ReadPortPin(RTS_PIN)) {
+        PRINT("RTS_PIN low.\n");
+        DelayMs(10);
+        GPIOA_SetBits(RTS_PIN);
+        GPIOA_ModeCfg(RTS_PIN, GPIO_ModeOut_PP_5mA);
+    } else {
+        PRINT("RTS_PIN high.\n");
+        GPIOA_ResetBits(RTS_PIN);
+        GPIOA_ModeCfg(RTS_PIN, GPIO_ModeOut_PP_5mA);
+      DelayMs(800);
+      GPIOA_SetBits(RTS_PIN);
+    }
+    PRINT("waiting for keyboard serial ID... \n");
+}
+
+void keyPress(uint8_t *pbuf, uint8_t *key_num, uint8_t raw_keycode){
+    for (uint8_t i = 0; i < *key_num; ++i) {
+        if(raw_keycode==pbuf[i]) return;
+    }
+    pbuf[*key_num]=raw_keycode;
+    (*key_num)++;
+}
+
+void keyRelease(uint8_t *pbuf, uint8_t *key_num, uint8_t raw_keycode){
+    for (uint8_t i = 0; i < *key_num; ++i) {
+        if(raw_keycode==pbuf[i]){
+            pbuf[i]=0;
+            // Remove the item at i and move the following items (if there are any) forward.
+            *key_num = CompactIntegers(pbuf, *key_num);
+            return;
+        }
+    }
+}
+
+// Reset the key buffers
+void keyReset(uint8_t *pbuf, uint8_t *key_num){
+    for (uint8_t i = 0; i < *key_num; ++i) {
+            pbuf[i]=0;
+    }
+    *key_num = 0;
 }
 
 void keyScan(uint8_t *pbuf, uint8_t *key_num)
 {
-    uint8_t KeyNum;
-    static uint8_t secbuf[120];
+    static uint8_t keyboard_rx_buff[100];
+    static uint8_t keyboard_rx_buff_len=0;
+    static uint8_t last_byte=0;
+    // Append the newly read data to the end of the previous data (if there is any left).
+    uint8_t len = UART0_RecvString(keyboard_rx_buff+keyboard_rx_buff_len);
+    keyboard_rx_buff_len += len;
+    uint8_t i = 0;
 
-    uint8_t firstbuf[120] = { 0 };  //每一次扫描 firstbuf复位为0
-
-    KeyNum = 0;
-
-    for (uint8_t i = 0; i < 17; i++)
+    for(i = 0;i < keyboard_rx_buff_len;i++)
     {
-        i == 10 ? GPIOA_ResetBits(IOmap[i]) : GPIOB_ResetBits(IOmap[i]);
-        __nop();
-        __nop(); //由于上拉输入拉低需要一定的时间，所以必须延时一段时间再读IO
-        {
-            if (Key_S0 == 0)
-            {
-                firstbuf[KeyNum++] = i * 7 + 1;
-            }
-            if (Key_S1 == 0)
-            {
-                firstbuf[KeyNum++] = i * 7 + 2;
-            }
-            if (Key_S2 == 0)
-            {
-                firstbuf[KeyNum++] = i * 7 + 3;
-            }
-            if (Key_S3 == 0)
-            {
-                firstbuf[KeyNum++] = i * 7 + 4;
-            }
-            if (Key_S4 == 0)
-            {
-                firstbuf[KeyNum++] = i * 7 + 5;
-            }
-            if (Key_S5 == 0)
-            {
-                firstbuf[KeyNum++] = i * 7 + 6;
-            }
-        }
-        i == 10 ? GPIOA_SetBits(IOmap[i]) : GPIOB_SetBits(IOmap[i]);
-
-        while (!(Key_S0 && Key_S1 && Key_S2 && Key_S3 && Key_S4 && Key_S5))
-        {
-            continue;
-        }
+        PRINT("byte from keyboard: %#x \n", keyboard_rx_buff[i]);
     }
 
-    //这一次与上一次键值相等 去抖动作用
-    if (tmos_memcmp(firstbuf, secbuf, sizeof(firstbuf)) == true)
+#ifdef KEYBOARD_TYPE_G750
+    for(i = 0;i+1 < keyboard_rx_buff_len;i++)
     {
-        tmos_memcpy(pbuf, secbuf, sizeof(firstbuf));
-        *key_num = KeyNum;
+        uint8_t raw_keycode = keyboard_rx_buff[i]&0b01111111;
+        if (raw_keycode^keyboard_rx_buff[i+1]==0b11111111){
+            bool key_up = keyboard_rx_buff[i]&0b10000000;
+            if (key_up) keyRelease(pbuf, key_num, raw_keycode);
+            else keyPress(pbuf, key_num, raw_keycode);
+            i++;
+        }
     }
+    // The incoming keycode is always 2 bytes, so if this is the last byte, we have to wait until the next UART read to get the second byte (or something is wrong)
+    if (i+1==keyboard_rx_buff_len){
+        keyboard_rx_buff[0]=keyboard_rx_buff[i];
+        keyboard_rx_buff_len = 1;
+    }else{
+        keyboard_rx_buff_len = 0;
+    }
+#endif
 
-    tmos_memcpy(secbuf, firstbuf, sizeof(firstbuf));
+#ifdef KEYBOARD_TYPE_PPK
+    for(i = 0;i < keyboard_rx_buff_len;i++)
+    {
+        uint8_t raw_keycode = keyboard_rx_buff[i]&0b01111111;
+        if (raw_keycode == 0) raw_keycode = 27;
+        bool key_up = keyboard_rx_buff[i]&0b10000000;
+        if(last_byte==keyboard_rx_buff[i]){
+            // keyboard duplicates the final key-up byte
+            keyReset(pbuf, key_num);
+        } else {
+            if (key_up){
+                keyRelease(pbuf, key_num, raw_keycode);
+            } else {
+                keyPress(pbuf, key_num, raw_keycode);
+            }
+            last_byte =  keyboard_rx_buff[i];
+        }
+    }
+    keyboard_rx_buff_len = 0;
+#endif
 }
-
 
 int readKeyVal(void)
 {
     static uint8_t current_key_map[120] = {0};
     static uint8_t last_key_map[120] = {0};
-    uint8_t key_num = 0xff;
+    static uint8_t key_num = 0;
     uint8_t curruent_key_8[8] = {0};
     uint8_t curruent_key_16[16] = {0};
     static uint8_t last_key_8[8] = {0};
     static uint8_t last_key_16[16] = {0};
 
     keyScan(current_key_map, &key_num);
+    // TODO: what does return -1 mean?
     if(key_num == 0xff)
     {
         return -1;
@@ -159,24 +199,25 @@ int readKeyVal(void)
 
         return true;
     }
+    handle_first_layer_special_key(curruent_key_8, is_long_key_trigged);
 
     if (is_long_key_trigged) {
         return 0;
     }
 
-//     PRINT("key8=[");
-//     for(int i = 0; i < 8; i++) {
-//         if(i) PRINT(" ");
-//         PRINT("%#x", curruent_key_8[i]);
-//     }
-//     PRINT("]\n");
-//
-//     PRINT("key16=[");
-//     for(int i = 0; i < 16; i++) {
-//         if(i) PRINT(" ");
-//         PRINT("%#x", curruent_key_16[i]);
-//     }
-//     PRINT("]\n\n");
+     PRINT("key8=[");
+     for(int i = 0; i < 8; i++) {
+         if(i) PRINT(" ");
+         PRINT("%#x", curruent_key_8[i]);
+     }
+     PRINT("]\n");
+
+     PRINT("key16=[");
+     for(int i = 0; i < 16; i++) {
+         if(i) PRINT(" ");
+         PRINT("%#x", curruent_key_16[i]);
+     }
+     PRINT("]\n\n");
 
     if(tmos_memcmp(curruent_key_8, last_key_8, 8) != true) {
         if(lwrb_get_free(&KEY_buff) < 8 + 1)

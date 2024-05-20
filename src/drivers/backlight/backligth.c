@@ -57,13 +57,14 @@ void set_led_num(bool s) {
 }
 
 void set_led_cap(bool s) {
-    (s) ? GPIOA_ResetBits(LED_CAP) : GPIOA_SetBits(LED_CAP);
+    (s) ? GPIOB_ResetBits(LED_CAP) : GPIOB_SetBits(LED_CAP);
 }
 
 void set_led_scr(bool s) {
-    (s) ? GPIOB_ResetBits(LED_SCR) : GPIOB_SetBits(LED_SCR);
+//    (s) ? GPIOB_ResetBits(LED_SCR) : GPIOB_SetBits(LED_SCR);
 }
 
+/*
 void set_bk(uint8_t line, bk_levels_t level) {
     PWMX_ACTOUT(line & BK_LINEALL, level, Low_Level, ENABLE);
 }
@@ -71,36 +72,23 @@ void set_bk(uint8_t line, bk_levels_t level) {
 void disbale_bk(uint8_t line) {
     PWMX_ACTOUT(line & BK_LINEALL, 0, Low_Level, DISABLE);
 }
-
+*/
 void bkinit(void) {
-    GPIOPinRemap(ENABLE, RB_PIN_PWMX);
+    //GPIOPinRemap(ENABLE, RB_PIN_PWMX);
 
     //º¸≈Ã◊¥Ã¨µ∆≈‰÷√
-    GPIOA_ResetBits(LED_CAP);
-    GPIOB_ResetBits(LED_SCR | LED_NUM);
-    GPIOA_ModeCfg(LED_CAP, GPIO_ModeOut_PP_5mA);
-    GPIOB_ModeCfg( LED_SCR | LED_NUM, GPIO_ModeOut_PP_5mA);
+    GPIOB_SetBits(LED_CAP);
+    GPIOB_SetBits(LED_NUM);
+    GPIOB_ModeCfg(LED_CAP, GPIO_ModeOut_PP_5mA);
+    GPIOB_ModeCfg(LED_NUM, GPIO_ModeOut_PP_5mA);
 
-    //±≥π‚µ∆≈‰÷√
-    GPIOA_SetBits(LR0 | LR1);
-    GPIOB_SetBits(LR2 | LR3 | LR4 | LR5);
-    GPIOA_ModeCfg(LR0 | LR1, GPIO_ModeOut_PP_5mA);
-    GPIOB_ModeCfg( LR2 | LR3 | LR4 | LR5, GPIO_ModeOut_PP_5mA);
-
-    PWMX_CLKCfg(4);                   // cycle = 4/Fsys
-    PWMX_CycleCfg(PWMX_Cycle_64);     // ÷‹∆⁄ = 64*cycle
-
-    led_level = device_led.led_level;
-
-    if (!device_led.led_en)
-        disbale_bk(BK_LINEALL);
 
     // user config
     // if(device_mode != MODE_USB)
     //     disbale_bk(BK_LINEALL);
 }
 #endif
-
+/*
 bool enhance_bk(uint8_t line) {
     if(device_mode != MODE_USB)
         return false;
@@ -127,3 +115,4 @@ bool weaken_bk(uint8_t line) {
     device_led.led_level = led_level;
     return true;
 }
+*/

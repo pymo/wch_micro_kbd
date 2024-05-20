@@ -10,12 +10,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define Key_S0                      (R32_PA_PIN&GPIO_Pin_0)
-#define Key_S1                      (R32_PA_PIN&GPIO_Pin_1)
-#define Key_S2                      (R32_PA_PIN&GPIO_Pin_2)
-#define Key_S3                      (R32_PA_PIN&GPIO_Pin_3)
-#define Key_S4                      (R32_PA_PIN&GPIO_Pin_4)
-#define Key_S5                      (R32_PA_PIN&GPIO_Pin_5)
+#define DCD_PIN                     (GPIO_Pin_11)  // GPIOA
+#define RTS_PIN                     (GPIO_Pin_12)  // GPIOA
+#define VCC_PIN                     (GPIO_Pin_15)  // GPIOB
 
 #define LONGKEY_TIME                800
 

@@ -17,6 +17,7 @@ struct key16_type {
 };
 
 int key_parse(uint8_t *key_map, uint8_t num, uint8_t key8[8], uint8_t key16[16]);
+uint8_t CompactIntegers(uint8_t *buf, uint8_t len);
 
 extern bool key_fn_flag;
 

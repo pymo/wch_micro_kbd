@@ -67,7 +67,7 @@
 									<listOptionValue builtIn="false" value="CONFIG_RISCV"/>
 									<listOptionValue builtIn="false" value="DCDC_ENABLE=FALSE"/>
 									<listOptionValue builtIn="false" value="CLK_OSC32K=1"/>
-									<listOptionValue builtIn="false" value="LOG"/>
+									<listOptionValue builtIn="false" value="KEYBOARD_TYPE_PPK"/>
 									<listOptionValue builtIn="false" value="DEBUG=1"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.compiler.include.files.288896968" name="Include files (-include)" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.compiler.include.files" useByScannerDiscovery="true" valueType="includeFiles"/>
