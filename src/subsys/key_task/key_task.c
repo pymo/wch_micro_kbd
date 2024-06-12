@@ -7,65 +7,11 @@
 #include "key_task.h"
 #include "config.h"
 #include "device_config.h"
-#include "BLE/hidkbd.h"
-#include "USB_task/USB_kbd.h"
-#include "RF_task/rf_dev.h"
 #include "HAL/HAL.h"
-#include "PM/pm_task.h"
 
 uint8_t key_task_id = 0;
-static uint8_t no_key_count;
-
-int key_deal(void)
-{
-    int ret = readKeyVal();
-    if(ret > 0) {
-        no_key_count = 0;
-
-        switch(device_mode){
-        case MODE_BLE:
-            pm_start_working(PM_WORKING_TIMEOUT, PM_IDLE_TIMEOUT);
-            OnBoard_SendMsg(hidEmuTaskId, RF_MS_STATE_CHANGE, PM_STATE_ACTIVE, NULL);
-            OnBoard_SendMsg(hidEmuTaskId, KEY_MESSAGE, 1, NULL);
-            break;
-
-        case MODE_RF24:
-            pm_start_working(PM_WORKING_TIMEOUT, PM_IDLE_TIMEOUT);
-            OnBoard_SendMsg(rf_dev_taskid, KEY_MESSAGE, 1, NULL);
-            break;
-
-        case MODE_USB:
-            /* USB don't sleep */
-            pm_start_working(PM_TIMEOUT_FOREVER, PM_TIMEOUT_FOREVER);
-            OnBoard_SendMsg(USBTaskID, KEY_MESSAGE, 1, NULL);
-            break;
-            
-        default:
-            pm_start_working(PM_TIMEOUT_FOREVER, PM_TIMEOUT_FOREVER);
-            break;
-        }
-    } else if(ret == 0) {
-        /* no key */
-        no_key_count++;
-        
-        if(no_key_count > 50) {
-            no_key_count = 50;
-            
-            if(pm_is_in_idle())
-            {
-                //PRINT("keyscan pause\n");
-                tmos_stop_task(key_task_id, KEY_SCAN_EVENT);
-                return 0;
-            }
-        } 
-    } else {
-        //PRINT("read key error\n");
-        return -1;
-    }
-
-    tmos_start_task(key_task_id, KEY_SCAN_EVENT, MS1_TO_SYSTEM_TIME(10));
-    return 1;
-}
+uint32_t gpio_b_interrupt_count = 0;
+uint32_t last_gpio_b_interrupt_count = 0;
 
 static void key_tmos_msg(tmos_event_hdr_t *pMsg)
 {
@@ -94,13 +40,8 @@ uint16_t key_event(uint8_t task_id, uint16_t events)
     }
 
     if(events & KEY_SCAN_EVENT) {
-        
-        int ret = key_deal();
-
-        if(ret < 0) {
-            tmos_start_task(key_task_id, KEY_SCAN_EVENT, MS1_TO_SYSTEM_TIME(10));
-        }
- 
+        key_loop();
+        tmos_start_task(key_task_id, KEY_SCAN_EVENT, MS1_TO_SYSTEM_TIME(10));
         return (events ^ KEY_SCAN_EVENT);
     }
 
@@ -114,12 +55,13 @@ void keyscan_task_init(void)
     tmos_start_task(key_task_id, KEY_SCAN_EVENT, MS1_TO_SYSTEM_TIME(10) );
 }
 
+__INTERRUPT
 __HIGH_CODE
-void GPIOA_IRQHandler(void){
-    no_key_count = 0;
+void GPIOB_IRQHandler(void){
+    gpio_b_interrupt_count++;
    // SetSysClock(CLK_SOURCE_PLL_60MHz);
 
     /* Wait for flash to stabilize */
     DelayUs(150);
-    GPIOA_ClearITFlagBit(GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6);
+    GPIOB_ClearITFlagBit(GPIO_Pin_4);
 }

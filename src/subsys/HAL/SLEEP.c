@@ -16,7 +16,9 @@
 #include "PM/pm_task.h"
 #include "key_task/key_task.h"
 
-extern bool is_idle;
+extern uint32_t last_gpio_b_interrupt_count;
+extern uint32_t gpio_b_interrupt_count;
+
 #if 1
 __HIGH_CODE
 void suspend_to_ram(uint32_t ticks)
@@ -74,12 +76,18 @@ void suspend_to_ram(uint32_t ticks)
     SAFEOPERATE;
     R16_POWER_PLAN = pp_flags;
 
-    PFIC_EnableIRQ(GPIO_A_IRQn);
+    //PFIC_EnableIRQ(GPIO_A_IRQn);
+    PFIC_EnableIRQ(GPIO_B_IRQn);
     do{
             R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG1;
             R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG2;
             SAFEOPERATE;
             R16_POWER_PLAN = pp_flags;
+
+            // Sleep starts, updates last_gpio_b_interrupt_count to the last known gpio_b_interrupt_count
+            // If gpio_b_interrupt_count's value changed during the sleep, it means the GPIOB is triggered.
+            last_gpio_b_interrupt_count=gpio_b_interrupt_count;
+
             __WFI();
             __nop();
             __nop();
@@ -92,7 +100,7 @@ void suspend_to_ram(uint32_t ticks)
                 if(*((uint32_t *)mac) == *((uint32_t *)MacAddr))
                     break;
             }
-            UART1_SendByte(0x31);
+            //UART1_SendByte(0x31);
 
             do
             {
@@ -104,19 +112,20 @@ void suspend_to_ram(uint32_t ticks)
                 R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG2;
                 SAFEOPERATE;
                 R8_SLP_WAKE_CTRL &=  ~(RB_SLP_GPIO_WAKE);    // RTC唤醒
-                UART1_SendByte(0x13);
+                //UART1_SendByte(0x13);
                 ticks += 100;                       //3.2Ms后重新唤醒设备
                 if( ticks > 0xA8C00000 )   ticks -= 0xA8C00000;
                 RTC_SetTignTime( ticks );
             }
     }while(1);
 
-    PFIC_DisableIRQ(GPIO_A_IRQn);
+    //PFIC_DisableIRQ(GPIO_A_IRQn);
+    PFIC_DisableIRQ(GPIO_B_IRQn);
     R8_SLP_WAKE_CTRL |=  (RB_SLP_GPIO_WAKE);    // RTC唤醒
     SetAllPins();
     if( RTCTigFlag )  // 注意如果使用了RTC以外的唤醒方式，需要注意此时32M晶振未稳定
     {
-        tmosTimer key_time = tmos_get_task_timer(key_task_id, KEY_SCAN_EVENT);
+/*        tmosTimer key_time = tmos_get_task_timer(key_task_id, KEY_SCAN_EVENT);
 
         if(key_time && key_time <= 2)
         {
@@ -127,11 +136,11 @@ void suspend_to_ram(uint32_t ticks)
           R8_PLL_CONFIG &= ~(1<<5);
           R8_SAFE_ACCESS_SIG = 0;
 
-          key_deal();
+          //key_deal();
 
           return ;
         }
-
+*/
         ticks += WAKE_UP_RTC_MAX_TIME;
         if( ticks > 0xA8C00000 )   ticks -= 0xA8C00000;
         RTC_SetTignTime( ticks );
@@ -145,24 +154,21 @@ void suspend_to_ram(uint32_t ticks)
         R8_SAFE_ACCESS_SIG =0;
         PFIC -> SCTLR |= (1<<2);                //deep sleep
 
-        R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG1;
-        R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG2;
-        SAFEOPERATE;
+
+        sys_safe_access_enable();
         R8_PLL_CONFIG &= ~(1<<5);
-        R8_SAFE_ACCESS_SIG = 0;
+        sys_safe_access_disable();
 
         __WFI();
         __nop();__nop();
 
     }
-    extern uint8_t no_key_count;
-    if(no_key_count == 0){
+    /*extern uint8_t no_key_count;
+    if(no_key_count < 50){
         OnBoard_SendMsg(key_task_id, KEY_PRESSED, 1, NULL);
-    }
+    }*/
 
-    R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG1;
-    R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG2;
-    SAFEOPERATE;
+    sys_safe_access_enable();
     R8_PLL_CONFIG &= ~(1<<5);
 
     HSECFG_Current( HSE_RCur_100 );     // 降为额定电流(低功耗函数中提升了HSE偏置电流)
@@ -326,7 +332,6 @@ u32 CH58X_LowPower( u32 time )
    }
 #if !HAL_LE_WORKING
   if(!pm_is_in_idle()){
-
       return 2;
   }
 #endif
@@ -367,7 +372,15 @@ u32 CH58X_LowPower( u32 time )
     // }
     // HSECFG_Current( HSE_RCur_100 );     // 降为额定电流(低功耗函数中提升了HSE偏置电流)
 
+    PWR_PeriphWakeUpCfg( ENABLE, RB_SLP_GPIO_WAKE, Short_Delay );
     suspend_to_ram(time);
+    PWR_PeriphWakeUpCfg( DISABLE, RB_SLP_GPIO_WAKE, Short_Delay );
+    if(last_gpio_b_interrupt_count!=gpio_b_interrupt_count){
+        PRINT("gpio_b_interrupt_count=%d\n",gpio_b_interrupt_count);
+        OnBoard_SendMsg(key_task_id, KEY_PRESSED, 1, NULL);
+        pm_start_working(PM_WORKING_TIMEOUT, PM_IDLE_TIMEOUT);
+        last_gpio_b_interrupt_count=gpio_b_interrupt_count;
+    }
 
   }
   else
@@ -396,7 +409,7 @@ u32 CH58X_LowPower( u32 time )
 void HAL_SleepInit( void )
 {
 #if (defined (HAL_SLEEP)) && (HAL_SLEEP == TRUE)
-  R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG1;
+/*  R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG1;
   R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG2;
   SAFEOPERATE;
   R8_SLP_WAKE_CTRL |= RB_SLP_RTC_WAKE | RB_SLP_GPIO_WAKE;    // RTC唤醒
@@ -404,9 +417,15 @@ void HAL_SleepInit( void )
   R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG2;
   SAFEOPERATE;
   R8_RTC_MODE_CTRL |= RB_RTC_TRIG_EN;    // 触发模式
-  R8_SAFE_ACCESS_SIG = 0;    //
+  R8_SAFE_ACCESS_SIG = 0;    */
 
-  GPIOA_ITModeCfg(GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6, GPIO_ITMode_FallEdge );        // 下降沿唤醒
+    PWR_PeriphWakeUpCfg( ENABLE, RB_SLP_RTC_WAKE, Short_Delay );
+
+    sys_safe_access_enable();
+    R8_RTC_MODE_CTRL |= RB_RTC_TRIG_EN;
+    sys_safe_access_disable();
+  //GPIOA_ITModeCfg(GPIO_Pin_0, GPIO_ITMode_FallEdge );        // 下降沿唤醒
+  GPIOB_ITModeCfg(GPIO_Pin_4, GPIO_ITMode_FallEdge );        // 下降沿唤醒
   PFIC_EnableIRQ( RTC_IRQn );
 
   if(device_mode == MODE_USB){

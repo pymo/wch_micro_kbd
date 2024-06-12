@@ -23,7 +23,8 @@ enum pm_state{
 #define PM_ENTER_STANDBY_EVENT        (1<<2)
 
 #define PM_TIMEOUT_FOREVER              (-1)
-#define PM_WORKING_TIMEOUT              (1000*5*60)//1min
+#define PM_BRIEF_KEEPALIVE_TIMEOUT      (3000) //3s
+#define PM_WORKING_TIMEOUT              (1000*5*60) //=5min
 #define PM_IDLE_TIMEOUT                 PM_TIMEOUT_FOREVER
 
 void pm_task_init(void);

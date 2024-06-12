@@ -21,7 +21,7 @@
 #include "USB/usbuser.h"
 #include "PM/pm_task.h"
 #include "device_config.h"
-#include "backlight/backlight.h"
+#include "led_task/led_task.h"
 /*********************************************************************
  * MACROS
  */
@@ -279,11 +279,11 @@ bool bt_adv_data_stop(void) {
 void bt_bond_init(void) {
     // Setup the GAP Bond Manager
     uint32 passkey = DEFAULT_PASSCODE;
-    uint8 pairMode = DEFAULT_PAIRING_MODE;
+    uint8 pairMode = GAPBOND_PAIRING_MODE_INITIATE;
     uint8 mitm = DEFAULT_MITM_MODE;
     uint8 ioCap = DEFAULT_IO_CAPABILITIES;
     uint8 bonding = DEFAULT_BONDING_MODE;
-    uint8 erase = ENABLE;
+    uint8 erase = DISABLE;
 
 
     GAPBondMgr_SetParameter( GAPBOND_PERI_DEFAULT_PASSCODE, sizeof(uint32),
@@ -644,6 +644,7 @@ static void hidEmuStateCB(gapRole_States_t newState, gapRoleEvent_t * pEvent) {
 
     case GAPROLE_ADVERTISING:
         if (pEvent->gap.opcode == GAP_MAKE_DISCOVERABLE_DONE_EVENT) {
+            set_bluetooth_indicator(BLULETOOTH_PAIRING);
             PRINT("Advertising..\n");
         }
         break;
@@ -657,6 +658,7 @@ static void hidEmuStateCB(gapRole_States_t newState, gapRoleEvent_t * pEvent) {
             hidEmuConnHandle = event->connectionHandle;
             tmos_start_task(hidEmuTaskId, START_PARAM_UPDATE_EVT,START_PARAM_UPDATE_EVT_DELAY);
             tmos_start_task(hidEmuTaskId,OPEN_NOTE_EVT,1600);
+            set_bluetooth_indicator(BLULETOOTH_CONNECTED_1+device_bond.ID_Num);
             PRINT("Connected..\n");
 
             tmos_memcpy(devAddr, event->devAddr, 6);
@@ -673,6 +675,7 @@ static void hidEmuStateCB(gapRole_States_t newState, gapRoleEvent_t * pEvent) {
         break;
 
     case GAPROLE_WAITING:
+        set_bluetooth_indicator(BLULETOOTH_OFF);
         if (pEvent->gap.opcode == GAP_END_DISCOVERABLE_DONE_EVENT) {
             PRINT("Waiting for advertising..\n");
         } else if (pEvent->gap.opcode == GAP_LINK_TERMINATED_EVENT) {

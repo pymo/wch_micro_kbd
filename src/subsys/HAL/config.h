@@ -71,7 +71,7 @@
 #define DCDC_ENABLE                                     TRUE
 #endif
 #ifndef HAL_SLEEP
-#define HAL_SLEEP										TRUE
+#define HAL_SLEEP										FALSE
 #endif
 #if HAL_SLEEP==TRUE
 #define HAL_LE_WORKING                                  FALSE            //工作模式是否睡眠
@@ -82,13 +82,13 @@
 #define SLEEP_RTC_MIN_TIME                              US_TO_RTC(1000)
 #endif
 #ifndef SLEEP_RTC_MAX_TIME                   
-#define SLEEP_RTC_MAX_TIME                              MS_TO_RTC(RTC_TO_MS(RTC_TIMER_MAX_VALUE) - 1000 * 60 * 60)
+#define SLEEP_RTC_MAX_TIME                              MS_TO_RTC(RTC_TO_MS(RTC_TIMER_MAX_VALUE) - 1000 * 60 * 60)  // 23 hours
 #endif
 #ifndef WAKE_UP_RTC_MAX_TIME
 #define WAKE_UP_RTC_MAX_TIME                            US_TO_RTC(1400)
 #endif
 #ifndef HAL_ADC
-#define HAL_ADC                                         FALSE
+#define HAL_ADC                                         TRUE
 #endif
 #ifndef HAL_KEY
 #define HAL_KEY											TRUE

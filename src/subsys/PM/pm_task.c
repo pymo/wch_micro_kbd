@@ -12,6 +12,7 @@
 #include "BLE/hidkbd.h"
 
 uint8_t pm_task_id = 0;
+u8 pm_is_idle = false;
 
 #define CONFIG_PM_DBG
 
@@ -22,7 +23,6 @@ uint8_t pm_task_id = 0;
 #endif
 
 #if (defined (HAL_SLEEP)) && (HAL_SLEEP == TRUE)
-u8 pm_is_idle = false;
 
 static void pm_tmos_msg(tmos_event_hdr_t *pMsg)
 {
@@ -40,7 +40,7 @@ u8 pm_is_in_idle(void)
 
 void pm_start_working(int working_timeout, int idle_timeout)
 {
-    //PM_DBG("Enter pm working\n");
+    PM_DBG("Enter pm working\n");
     pm_is_idle = false;
 
     if(working_timeout >= 0) {
@@ -60,8 +60,8 @@ void pm_goto_standby(void)
     DelayMs(10);
 
     usb_disable();
-    PFIC_EnableIRQ( GPIO_A_IRQn );
     RstAllPins();
+    PFIC_EnableIRQ( GPIO_B_IRQn );
     LowPower_Shutdown(0);
 }
 
@@ -119,7 +119,7 @@ void pm_task_init(void)
 {
 
 }
-bool pm_is_in_idle(void)
+u8 pm_is_in_idle(void)
 {
 
     return false;

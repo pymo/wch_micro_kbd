@@ -11,7 +11,7 @@
 #include "device_config.h"
 #include "RF_task/rf_dev.h"
 #include "HAL/HAL.h"
-#include "backlight/backlight.h"
+#include "led_task/led_task.h"
 #include "USB/usbuser.h"
 #include "RingBuffer/lwrb.h"
 #include "HAL_FLASH/include/easyflash.h"
@@ -26,6 +26,7 @@ enum special_key_flag {
     SPECIAL_KEY_VOL_INC,
     SPECIAL_KEY_BRIGHTNESS_DEC,
     SPECIAL_KEY_BRIGHTNESS_INC,
+    SPECIAL_KEY_HOME,
     SPECIAL_KEY_BACK,
     SPECIAL_KEY_MODE_USB,
     SPECIAL_KEY_BLE_CHAN_1,
@@ -55,11 +56,13 @@ struct special_handler {
 
 uint8_t key_spe_taskid = 0;
 
+#ifdef KEYBOARD_TYPE_G750
 static const uint8_t special_key_map[SPECIAL_KEY_NUM] = {
         HID_KEY_P,  // SPECIAL_KEY_VOL_DEC,
         HID_KEY_SEMICOLON,  // SPECIAL_KEY_VOL_INC,
         HID_KEY_COMMA,  // SPECIAL_KEY_BRIGHTNESS_DEC,
         HID_KEY_PERIOD,  // SPECIAL_KEY_BRIGHTNESS_INC,
+        HID_KEY_GUI_RIGHT,  // SPECIAL_KEY_HOME, not present in keyboard, just a placeholder
         HID_KEY_WWW_HOME,  // SPECIAL_KEY_BACK,
         HID_KEY_M,  // SPECIAL_KEY_MODE_USB
         HID_KEY_J,  // SPECIAL_KEY_BLE_CHAN_1,
@@ -67,11 +70,24 @@ static const uint8_t special_key_map[SPECIAL_KEY_NUM] = {
         HID_KEY_L,  // SPECIAL_KEY_BLE_CHAN_3,
         HID_KEY_U,  // SPECIAL_KEY_BLE_CHAN_4,
 };
+#endif
 
-void send_hid_key(struct speical_data *data, uint8_t usage_id)
-{
+#ifdef KEYBOARD_TYPE_PPK
+static const uint8_t special_key_map[SPECIAL_KEY_NUM] = {
+        HID_KEY_ARROW_DOWN,  // SPECIAL_KEY_VOL_DEC,
+        HID_KEY_ARROW_UP,  // SPECIAL_KEY_VOL_INC,
+        HID_KEY_ARROW_LEFT,  // SPECIAL_KEY_BRIGHTNESS_DEC,
+        HID_KEY_ARROW_RIGHT,  // SPECIAL_KEY_BRIGHTNESS_INC,
+        HID_KEY_GUI_LEFT,  // SPECIAL_KEY_HOME,
+        HID_KEY_GUI_RIGHT,  // SPECIAL_KEY_BACK, not present in keyboard, just a placeholder
+        HID_KEY_U,  // SPECIAL_KEY_MODE_USB
+        HID_KEY_A,  // SPECIAL_KEY_BLE_CHAN_1,
+        HID_KEY_S,  // SPECIAL_KEY_BLE_CHAN_2,
+        HID_KEY_D,  // SPECIAL_KEY_BLE_CHAN_3,
+        HID_KEY_F,  // SPECIAL_KEY_BLE_CHAN_4,
+};
+#endif
 
-}
 /*
 static void mode_rf24(struct speical_data *data)
 {
@@ -176,6 +192,10 @@ static void brightness_inc(struct speical_data *data){
 
 static void www_back(struct speical_data *data){
     send_consumer_key(data, HID_USAGE_CONSUMER_WWW_BACK);
+}
+
+static void www_home(struct speical_data *data){
+    send_consumer_key(data, HID_USAGE_CONSUMER_WWW_HOME);
 }
 
 /*
@@ -290,6 +310,7 @@ static const struct special_handler handler[] = {
     SPECIAL_HANDLER(SPECIAL_KEY_VOL_INC, vol_inc),
     SPECIAL_HANDLER(SPECIAL_KEY_BRIGHTNESS_DEC, brightness_dec),
     SPECIAL_HANDLER(SPECIAL_KEY_BRIGHTNESS_INC, brightness_inc),
+    SPECIAL_HANDLER(SPECIAL_KEY_HOME, www_home),
     SPECIAL_HANDLER(SPECIAL_KEY_BACK, www_back),
     SPECIAL_HANDLER(SPECIAL_KEY_MODE_USB, mode_usb),
     SPECIAL_HANDLER(SPECIAL_KEY_BLE_CHAN_1, ble_chan_1),
@@ -309,6 +330,13 @@ static inline uint8_t is_speical_key(uint8_t *keys_8, uint8_t *key_list_special)
     if (key_fn_flag) {
         //key_fn_flag = 0;
 
+#ifdef KEYBOARD_TYPE_PPK
+        // For PPK, Fn+LEFTGUI=WWW_HOME, so we need to extract the LEFTGUI status from the first byte.
+        if (keys_8[0] & KEYBOARD_MODIFIER_LEFTGUI) {
+            key_list_special[num++] = SPECIAL_KEY_HOME;
+            keys_8[0] &= (~KEYBOARD_MODIFIER_LEFTGUI);
+        }
+#endif
         for (key_idx = 2; key_idx < 8; key_idx++) {
             // 键值为0 则后面无更多键值
             if (!keys_8[key_idx]) {

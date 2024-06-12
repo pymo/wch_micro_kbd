@@ -26,12 +26,10 @@
 #define __HIGH_CODE   __attribute__((section(".highcode")))
 #endif
 
-#ifndef __INTERRUPT
 #ifdef INT_SOFT
 #define __INTERRUPT   __attribute__((interrupt()))
 #else
 #define __INTERRUPT   __attribute__((interrupt("WCH-Interrupt-fast")))
-#endif
 #endif
 
 #define Debug_UART0        0

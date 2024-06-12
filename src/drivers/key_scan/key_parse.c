@@ -107,6 +107,7 @@ void ModifierKeyHandler(uint8_t *hid_keycodes, uint8_t *keys, uint8_t nums)
     }
 }
 
+#ifdef KEYBOARD_TYPE_G750
 // If Fn+key is mapped to another HID key (i.e. not consumer or special function), handle it here, otherwise handle it in key_special.c
 void FnHidKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
     if (!key_fn_flag) return;
@@ -172,6 +173,60 @@ void FnHidKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
         }
     }
 }
+#endif
+
+#ifdef KEYBOARD_TYPE_PPK
+// If Fn+key is mapped to another HID key (i.e. not consumer or special function), handle it here, otherwise handle it in key_special.c
+void FnHidKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
+    if (!key_fn_flag) return;
+    for (uint8_t i = 0; i < nums; ++i)
+    {
+        switch (hid_keycodes[i]){
+        case HID_KEY_TAB:
+            hid_keycodes[i] = HID_KEY_ESCAPE;
+            break;
+        case HID_KEY_1:
+            hid_keycodes[i] = HID_KEY_F1;
+            break;
+        case HID_KEY_2:
+            hid_keycodes[i] = HID_KEY_F2;
+            break;
+        case HID_KEY_3:
+            hid_keycodes[i] = HID_KEY_F3;
+            break;
+        case HID_KEY_4:
+            hid_keycodes[i] = HID_KEY_F4;
+            break;
+        case HID_KEY_5:
+            hid_keycodes[i] = HID_KEY_F5;
+            break;
+        case HID_KEY_6:
+            hid_keycodes[i] = HID_KEY_F6;
+            break;
+        case HID_KEY_7:
+            hid_keycodes[i] = HID_KEY_F7;
+            break;
+        case HID_KEY_8:
+            hid_keycodes[i] = HID_KEY_F8;
+            break;
+        case HID_KEY_9:
+            hid_keycodes[i] = HID_KEY_F9;
+            break;
+        case HID_KEY_0:
+            hid_keycodes[i] = HID_KEY_F10;
+            break;
+        case HID_KEY_MINUS:
+            hid_keycodes[i] = HID_KEY_F11;
+            break;
+        case HID_KEY_EQUAL:
+            hid_keycodes[i] = HID_KEY_F12;
+            break;
+        default:
+            break;
+        }
+    }
+}
+#endif
 
 int key_parse(uint8_t *key_map, uint8_t num, uint8_t key8[8], uint8_t key16[16])
 {

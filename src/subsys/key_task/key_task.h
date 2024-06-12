@@ -12,12 +12,11 @@
 
 /*task event*/
 #define KEY_SCAN_EVENT              (1<<0)
-#define KEY_SCAN_SHORT_TO_EVENT     (1<<1)
-#define KEY_SCAN_LONG_TO_EVENT      (1<<2)
 
-int key_deal(void);
 void keyscan_task_init(void);
 
 extern uint8_t key_task_id;
+extern uint32_t gpio_b_interrupt_count;
+extern uint32_t last_gpio_b_interrupt_count;
 
 #endif /* SUBSYS_KEY_TASK_KEY_TASK_H */

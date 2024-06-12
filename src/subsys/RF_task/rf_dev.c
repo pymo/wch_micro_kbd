@@ -5,7 +5,7 @@
 #include "USB/usbuser.h"
 #include "RingBuffer/lwrb.h"
 #include "RF_PHY/rf_pair.h"
-#include "backlight/backlight.h"
+#include "led_task/led_task.h"
 #include "device_config.h"
 extern u8 pm_is_idle;
 uint8_t rf_dev_taskid = 0;

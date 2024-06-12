@@ -14,14 +14,78 @@
 #include "RF_task/rf_dev.h"
 #include "device_config.h"
 #include "BLE/hidkbd.h"
-#include "key_scan/keyscan.h"
-#include "backlight/backlight.h"
 #include "PM/pm_task.h"
+#include "led_task/led_task.h"
 #include "key_task/key_task.h"
 
 tmosTaskID halTaskID;
 uint8_t no_key_count = 0;
-bool is_idle = false;
+uint8_t battery_percentage = 100;
+
+// The ADC of ESP32-C3 is not linear to the voltage... so we don't bother
+// converting the raw value to volts. We just measure the raw value across the
+// entire run time, then we can calculate the raw reading at 0%, 5%, ..., 100%
+// battery life. It is a rough estimation anyway.
+//
+// If you are using a different ESP32 board, you may need to change this table.
+// This lookup table must have 21 entries. Each entry must be different,
+// otherwise we will have divide-by-zero error below.
+
+const uint32_t bat_percent_lookup[] = {
+        2000, 2340, 2390, 2420, 2450, 2475, 2490,
+        2505, 2520, 2530, 2550, 2570, 2600, 2645,
+        2675, 2705, 2740, 2770, 2805, 2845, 2905};
+#define BAT_SAMPLE_WINDOW_SIZE 10
+uint32_t bat_latest_samples[BAT_SAMPLE_WINDOW_SIZE] = {0};
+uint8_t latest_sample_index = BAT_SAMPLE_WINDOW_SIZE;
+
+uint8_t AdcToBatteryPercentage(uint32_t adc_value){
+/*    // Put the latest adc_value into the bat_latest_samples
+    if (latest_sample_index == BAT_SAMPLE_WINDOW_SIZE) {
+        for (uint8_t i = 0; i < BAT_SAMPLE_WINDOW_SIZE; ++i) {
+            bat_latest_samples[i] = adc_value;
+        }
+        latest_sample_index = 1;
+    } else {
+        bat_latest_samples[latest_sample_index] = adc_value;
+        latest_sample_index += 1;
+        if(latest_sample_index >= BAT_SAMPLE_WINDOW_SIZE) latest_sample_index=0;
+    }
+    // Calculates the average value
+    uint32_t adcsum = 0;
+    for(uint8_t i = 0; i < BAT_SAMPLE_WINDOW_SIZE; ++i )
+    {
+      adcsum +=bat_latest_samples[i];
+    }
+    uint32_t adcavg = adcsum/BAT_SAMPLE_WINDOW_SIZE;*/
+    uint32_t adcavg = adc_value;
+    // Looks up the table to determine the percentage
+    uint8_t percent = 100;
+    int n;
+    for (n = 0; n <= 20; n++) {
+      if (adcavg < bat_percent_lookup[n]) {
+        if (n == 0) {
+            percent = 0;
+          break;
+        } else {
+          // adc_value falls between bat_percent_lookup[n-1] and
+          // bat_percent_lookup[n]. Do interpolation.
+            percent = 5 * (n - 1) +
+                          5 * (adcavg - bat_percent_lookup[n - 1]) /
+                              (bat_percent_lookup[n] - bat_percent_lookup[n - 1]);
+          break;
+        }
+      }
+    }
+    if (n > 20) {
+        percent = 100;
+    }
+    return percent;
+}
+
+uint8_t GetBatteryPercentage(){
+    return battery_percentage;
+}
 
 /*******************************************************************************
  * @fn          Lib_Calibration_LSI
@@ -244,14 +308,6 @@ tmosEvents HAL_ProcessEvent( tmosTaskID task_id, tmosEvents events )
     return events ^ SYS_EVENT_MSG;
   }
 
-  if ( events & LED_BLINK_EVENT )
-  {
-#if (defined HAL_LED) && (HAL_LED == TRUE)
-    HalLedUpdate( );
-#endif // HAL_LED
-    return events ^ LED_BLINK_EVENT;
-  }
-
   if ( events & HAL_REG_INIT_EVENT )
   {
 #if (defined BLE_CALIBRATION_ENABLE) && (BLE_CALIBRATION_ENABLE == TRUE)	// 校准任务，单次校准耗时小于10ms
@@ -268,31 +324,34 @@ tmosEvents HAL_ProcessEvent( tmosTaskID task_id, tmosEvents events )
     static bool is_adc_init = FALSE;
     if(!is_adc_init) {
       ADC_ExtSingleChSampInit( SampleFreq_3_2, ADC_PGA_0 );
-      ADC_ChannelCfg( 3 );
+      ADC_ChannelCfg( 5 );
       is_adc_init = TRUE;
     }
 
     uint32_t adcsum = 0;
-    GPIOA_ModeCfg(GPIO_Pin_13, GPIO_ModeIN_Floating);
+    GPIOA_ModeCfg(GPIO_Pin_15, GPIO_ModeIN_Floating);
+    signed short RoughCalib_Value = ADC_DataCalib_Rough(); // 用于计算ADC内部偏差，记录到全局变量 RoughCalib_Value中
     for(uint8_t i = 0; i < 20; i++ )
     {
-      adcsum += ADC_ExcutSingleConver();      // 连续采样20次
+      adcsum += ADC_ExcutSingleConver() + RoughCalib_Value;      // 连续采样20次
     }
-    GPIOA_ModeCfg(GPIO_Pin_13, GPIO_ModeIN_PU);
+    GPIOA_ModeCfg(GPIO_Pin_15, GPIO_ModeIN_PU);
     uint32_t adcavg = adcsum/20;
-    LOG_INFO("adc avg: %d", adcavg);
+    float voltage =  ((float)adcavg)/2048.0*1.05;
+    PRINT("adc avg: %d, offset: %d voltage: %f\n", adcavg, RoughCalib_Value, voltage);
+    battery_percentage = AdcToBatteryPercentage(adcavg);
 
-#define MIN_BATTERY_VOL         2.5
-#define ADC_THRESHOLD (MIN_BATTERY_VOL*2048/1.05)  //低于2.5V睡眠
+//#define MIN_BATTERY_VOL         2.5
+//#define ADC_THRESHOLD (MIN_BATTERY_VOL*2048/1.05)  //低于2.5V睡眠
 
-    if(adcavg < (uint32_t)ADC_THRESHOLD) {
-      LOG_INFO("battery low...");
-#if( DEBUG == Debug_UART1 )  // 使用其他串口输出打印信息需要修改这行代码
-      while( ( R8_UART1_LSR & RB_LSR_TX_ALL_EMP ) == 0 )
-      __nop();
-#endif
-    }
-    tmos_start_task( halTaskID, HAL_ADC_EVENT, MS1_TO_SYSTEM_TIME(60*1000));   //1min 检测一次
+//    if(adcavg < (uint32_t)ADC_THRESHOLD) {
+//        PRINT("battery low...\n");
+//#if( DEBUG == Debug_UART1 )  // 使用其他串口输出打印信息需要修改这行代码
+//      while( ( R8_UART1_LSR & RB_LSR_TX_ALL_EMP ) == 0 )
+//      __nop();
+//#endif
+//    }
+    tmos_start_task( halTaskID, HAL_ADC_EVENT, MS1_TO_SYSTEM_TIME(1000));   //60s 检测一次
     return events ^ HAL_ADC_EVENT;
   }
 
@@ -381,11 +440,10 @@ void HAL_Init()
 #endif
 
 #if (defined HAL_LED) && (HAL_LED == TRUE)
-  bkinit();
+  led_task_init();
 #endif
 
 #if (defined HAL_KEY) && (HAL_KEY == TRUE)
-  keyInit();
   keyscan_task_init();
 #endif
 

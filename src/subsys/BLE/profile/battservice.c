@@ -11,6 +11,7 @@
  * INCLUDES
  */
 #include "CONFIG.h"
+#include "HAL/HAL.h"
 #include "hiddev.h"
 #include "battservice.h"
 
@@ -502,50 +503,7 @@ static void battNotifyCB( linkDBItem_t *pLinkItem )
  */
 static uint8 battMeasure( void )
 {
-  uint16 adc;
-  uint8 percent;
-
-  // Call measurement setup callback
-  if (battServiceSetupCB != NULL)
-  {
-    battServiceSetupCB();
-  }
-
-  // Configure ADC and perform a read
-  adc = 300;
-  // Call measurement teardown callback
-  if (battServiceTeardownCB != NULL)
-  {
-    battServiceTeardownCB();
-  }
-
-  if (adc >= battMaxLevel)
-  {
-    percent = 100;
-  }
-  else if (adc <= battMinLevel)
-  {
-    percent = 0;
-  }
-  else
-  {
-    if (battServiceCalcCB != NULL)
-    {
-      percent = battServiceCalcCB(adc);
-    }
-    else
-    {
-      uint16 range =  battMaxLevel - battMinLevel + 1;
-
-      // optional if you want to keep it even, otherwise just take floor of divide
-      // range += (range & 1);
-      range >>= 2; // divide by 4
-
-      percent = (uint8) ((((adc - battMinLevel) * 25) + (range - 1)) / range);
-    }
-  }
-
-  return percent;
+  return GetBatteryPercentage();
 }
 
 /*********************************************************************

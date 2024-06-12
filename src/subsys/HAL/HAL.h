@@ -19,7 +19,6 @@ extern "C"
 
 #include "RTC.h"
 #include "SLEEP.h"	
-#include "LED.h"
 #include "KEY.h"
 	
 /* hal task Event */
@@ -67,6 +66,7 @@ extern tmosEvents HAL_ProcessEvent( tmosTaskID task_id, tmosEvents events );
 extern void CH57X_BLEInit( void );
 extern uint16 HAL_GetInterTempValue( void );
 extern void Lib_Calibration_LSI( void );
+extern uint8_t GetBatteryPercentage( void );
 
 uint8 OnBoard_SendMsg(uint8_t registeredTaskID, uint8 event, uint8 state, void *data);
 /*********************************************************************

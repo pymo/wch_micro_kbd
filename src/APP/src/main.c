@@ -15,6 +15,7 @@
 #include "RingBuffer/lwrb.h"
 #include "config.h"
 #include "RF_PHY/rf_sync.h"
+#include "key_scan/keyscan.h"
 
 #include "I2C/myi2c.h"
 
@@ -74,7 +75,7 @@ int main(void)
     GPIOA_SetBits(GPIO_Pin_0 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6);
     GPIOA_ModeCfg(GPIO_Pin_0 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6, GPIO_ModeOut_PP_5mA);
 #endif
-
+/*
     GPIOA_ModeCfg(GPIO_Pin_15, GPIO_ModeIN_PD);
     GPIOA_SetBits(GPIO_Pin_14);
     GPIOA_ModeCfg( GPIO_Pin_14, GPIO_ModeOut_PP_5mA);
@@ -87,7 +88,7 @@ int main(void)
         isUSBinsert = false;
         PRINT("NO USB\n");
     }
-
+*/
     /*DataFlash≥ı ºªØ*/
     if (easyflash_init() != SUCCESS) {
         LOG_INFO("Date Flash init error!");
@@ -98,7 +99,6 @@ int main(void)
     ring_buffer_init();
 
     LOG_INFO("device id:%#x", device_bond.ID_Num);
-
     Mode_Init(device_mode);
 
     Main_Circulation();
