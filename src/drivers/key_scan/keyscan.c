@@ -32,12 +32,11 @@ void SetAllPins(void) {/*
 
 }
 
-bool ContainsKeyboardId(uint8_t* keyboard_id_buff, uint8_t keyboard_id_buff_len) {
-    for (uint8_t i = 0; i < keyboard_id_buff_len; ++i) {
-        if (keyboard_id_buff_len >= 2) {
-            if (keyboard_id_buff[keyboard_id_buff_len - 2] == KEYBOARD_ID0
-                    && keyboard_id_buff[keyboard_id_buff_len - 1]
-                            == KEYBOARD_ID1) {
+bool ContainsKeyboardId(uint8_t* keyboard_id_buff, uint8_t keyboard_id_buff_len){
+    for (uint8_t i = 0; i< keyboard_id_buff_len; ++i){
+        if (keyboard_id_buff_len >= 2){
+            if(keyboard_id_buff[keyboard_id_buff_len - 2] == KEYBOARD_ID0
+                    && keyboard_id_buff[keyboard_id_buff_len - 1] == KEYBOARD_ID1) {
                 return true;
             }
         }
@@ -47,10 +46,10 @@ bool ContainsKeyboardId(uint8_t* keyboard_id_buff, uint8_t keyboard_id_buff_len)
 
 int key_deal(void) {
     // Reboot if no recent keypress, otherwise keyboard falls asleep
-    uint32 epoc_ms = TMOS_GetSystemClock() / 1000 * SYSTEM_TIME_MICROSEN;
+    uint32 epoc_ms = TMOS_GetSystemClock() * SYSTEM_TIME_MICROSEN  / 1000;
     if (epoc_ms < last_pressed) {
         // Timer has been reinitialized since the last press event.
-        // This could happen after BLE mode switch, simply reset the last_pressed value.
+        // This could happen after BLE channel switch, simply reset the last_pressed value.
         PRINT("TMOS SystemClock has been reset, update last_pressed.\n");
         last_pressed = epoc_ms;
     } else if (epoc_ms - last_pressed > KEEPALIVE_TIMEOUT_MS) {
@@ -98,7 +97,7 @@ void key_loop() {
     static uint32_t ms_last_state_change = 0;
     static uint8_t keyboard_id_buff[20];
     static uint8_t keyboard_id_buff_len = 0;
-    uint32_t ms_current = TMOS_GetSystemClock() / 1000 * SYSTEM_TIME_MICROSEN;
+    uint32_t ms_current = TMOS_GetSystemClock() * SYSTEM_TIME_MICROSEN  / 1000;
     if (ms_current < ms_last_state_change) {
         PRINT(
                 "ms_current decreased, set the ms_last_state_change to be the same.\n");
@@ -183,15 +182,15 @@ void key_loop() {
         }
 
         keyboard_id_buff_len += len;
-        // Checks keyboard ID
-        if (ContainsKeyboardId(keyboard_id_buff, keyboard_id_buff_len)) {
-            PRINT("Keyboard init complete.\n");
-            KEYBOARD_REBOOT_DELAY_MS = 100;
-            last_pressed = TMOS_GetSystemClock() / 1000 * SYSTEM_TIME_MICROSEN;
-            ms_last_state_change = ms_current;
-            k_state = K_STATE_6_ID_RECEIVED;
-            keyboard_id_buff_len = 0;
-        }
+            // Checks keyboard ID
+            if (ContainsKeyboardId(keyboard_id_buff, keyboard_id_buff_len)){
+                PRINT("Keyboard init complete.\n");
+                KEYBOARD_REBOOT_DELAY_MS = 100;
+                last_pressed = ms_current;
+                ms_last_state_change = ms_current;
+                k_state = K_STATE_6_ID_RECEIVED;
+                keyboard_id_buff_len = 0;
+            }
         break;
     case K_STATE_6_ID_RECEIVED:
         key_deal();
@@ -207,7 +206,7 @@ void keyPress(uint8_t *pbuf, uint8_t *key_num, uint8_t raw_keycode) {
     }
     pbuf[*key_num] = raw_keycode;
     (*key_num)++;
-    last_pressed = TMOS_GetSystemClock() / 1000 * SYSTEM_TIME_MICROSEN;
+    last_pressed = TMOS_GetSystemClock() * SYSTEM_TIME_MICROSEN  / 1000;
 }
 
 void keyRelease(uint8_t *pbuf, uint8_t *key_num, uint8_t raw_keycode) {

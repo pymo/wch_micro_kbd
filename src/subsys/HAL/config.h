@@ -71,7 +71,7 @@
 #define DCDC_ENABLE                                     TRUE
 #endif
 #ifndef HAL_SLEEP
-#define HAL_SLEEP										FALSE
+#define HAL_SLEEP										TRUE
 #endif
 #if HAL_SLEEP==TRUE
 #define HAL_LE_WORKING                                  FALSE            //工作模式是否睡眠

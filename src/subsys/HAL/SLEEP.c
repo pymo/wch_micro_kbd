@@ -76,7 +76,6 @@ void suspend_to_ram(uint32_t ticks)
     SAFEOPERATE;
     R16_POWER_PLAN = pp_flags;
 
-    //PFIC_EnableIRQ(GPIO_A_IRQn);
     PFIC_EnableIRQ(GPIO_B_IRQn);
     do{
             R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG1;
@@ -381,7 +380,6 @@ u32 CH58X_LowPower( u32 time )
         pm_start_working(PM_WORKING_TIMEOUT, PM_IDLE_TIMEOUT);
         last_gpio_b_interrupt_count=gpio_b_interrupt_count;
     }
-
   }
   else
   {
@@ -424,7 +422,6 @@ void HAL_SleepInit( void )
     sys_safe_access_enable();
     R8_RTC_MODE_CTRL |= RB_RTC_TRIG_EN;
     sys_safe_access_disable();
-  //GPIOA_ITModeCfg(GPIO_Pin_0, GPIO_ITMode_FallEdge );        // ÏÂ½µÑØ»½ÐÑ
   GPIOB_ITModeCfg(GPIO_Pin_4, GPIO_ITMode_FallEdge );        // ÏÂ½µÑØ»½ÐÑ
   PFIC_EnableIRQ( RTC_IRQn );
 

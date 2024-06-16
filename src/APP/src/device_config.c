@@ -40,16 +40,11 @@ uint8_t SaveDeviceInfo( char * device_info )
 
 void ResetDeviceInfo(char * device_info)
 {
-    if(strcmp(device_info, "all") == 0){
-        SaveDeviceInfo("all");
-        return ;
-    }
-    if(strcmp(device_info, "device_mode") == 0){
+    if(strcmp(device_info, "device_mode") == 0 || strcmp(device_info, "all") == 0){
         device_mode = MODE_BLE;
-        SaveDeviceInfo(device_info);
     }
 
-    if(strcmp(device_info, "device_bond") == 0){
+    if(strcmp(device_info, "device_bond") == 0 || strcmp(device_info, "all") == 0){
         __attribute__((aligned(4))) uint8_t mac_addr[6]; 
 
         tmos_memset(&device_bond, 0, sizeof(device_bond));
@@ -59,20 +54,18 @@ void ResetDeviceInfo(char * device_info)
             device_bond.ID[i].local_addr[2] = 0;
             device_bond.ID[i].local_addr[1] = i;
         }
-        SaveDeviceInfo(device_info);
     }
 
-    if(strcmp(device_info, "device_led") == 0){
+    if(strcmp(device_info, "device_led") == 0 || strcmp(device_info, "all") == 0){
         device_led.led_en = 0;
         device_led.led_level = 48;
-        SaveDeviceInfo(device_info);
     }
 
-    if(strcmp(device_info, "device_pair") == 0){
+    if(strcmp(device_info, "device_pair") == 0 || strcmp(device_info, "all") == 0){
         device_pair.Pair_flag = 0;
         device_pair.Mac_addr = DEFAULT_MAC;
-        SaveDeviceInfo(device_info);
     }
+    SaveDeviceInfo(device_info);
 }
 
 void ReadDeviceInfo( char * device_info )

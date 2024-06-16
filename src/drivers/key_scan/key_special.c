@@ -272,9 +272,9 @@ void switch_ble_channel(struct speical_data *data, uint8_t channel)
         }
         PRINT(")\n");
 
-        device_bond.ID[0].isbond = false;
-        device_bond.ID_Num = 0;
-        device_bond.ID[0].local_addr[2]++;
+        device_bond.ID[channel-1].isbond = false;
+        device_bond.ID_Num = channel-1;
+        device_bond.ID[channel-1].local_addr[2]++;
         needs_mode_change = true;
 
     } else {

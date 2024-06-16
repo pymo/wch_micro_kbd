@@ -6,7 +6,7 @@
 
 #include <led_task/led_task.h>
 #include "soc.h"
-#include "HAL/HAL.h"
+#include "HAL/ADC.h"
 #include "device_config.h"
 #include "BLE/hidkbd.h"
 #include "PM/pm_task.h"

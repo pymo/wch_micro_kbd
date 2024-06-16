@@ -10,4 +10,4 @@ Erase All=true
 Program=true
 Verify=true
 Reset=true
-Target Path=obj/Three-mode_kbd4.3.hex
+Target Path=obj/wch_micro_kbd.hex
