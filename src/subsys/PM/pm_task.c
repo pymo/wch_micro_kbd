@@ -8,6 +8,7 @@
 #include "device_config.h"
 #include "key_scan/keyscan.h"
 #include "USB_task/USB_kbd.h"
+#include "led_task/led_task.h"
 #include "HAL/HAL.h"
 #include "BLE/hidkbd.h"
 
@@ -89,7 +90,7 @@ uint16_t pm_event(uint8_t task_id, uint16_t events)
         }else{
             pm_is_idle = true;
         }
-
+        update_led_state();
         if(device_mode == MODE_BLE)
             OnBoard_SendMsg(hidEmuTaskId, RF_MS_STATE_CHANGE, PM_STATE_SLEEP, NULL);
 

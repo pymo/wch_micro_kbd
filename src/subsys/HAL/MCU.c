@@ -266,7 +266,7 @@ tmosEvents HAL_ProcessEvent( tmosTaskID task_id, tmosEvents events )
 //      __nop();
 //#endif
 //    }
-   // ADCBatterySample();
+    ADCBatterySample();
     tmos_start_task( halTaskID, HAL_ADC_EVENT, MS1_TO_SYSTEM_TIME(ADC_INTERVAL_MS));
     return events ^ HAL_ADC_EVENT;
   }

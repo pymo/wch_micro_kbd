@@ -51,7 +51,7 @@ void suspend_to_ram(uint32_t ticks)
                         | RB_PWR_CORE
                         | RB_PWR_RAM2K
                         | RB_PWR_RAM30K
-                        | RB_PWR_EXTEND
+                       // | RB_PWR_EXTEND
 #if DCDC_ENABLE
                         | RB_PWR_DCDC_PRE
                         | RB_PWR_DCDC_EN

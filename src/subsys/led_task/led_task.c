@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <led_task/led_task.h>
+#include "led_task/led_task.h"
 #include "soc.h"
 #include "HAL/ADC.h"
 #include "device_config.h"

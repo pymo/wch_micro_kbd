@@ -11,6 +11,7 @@
  * INCLUDES
  */
 #include "CONFIG.h"
+#include "HAL/HAL.h"
 #include "HAL/ADC.h"
 #include "hiddev.h"
 #include "battservice.h"
