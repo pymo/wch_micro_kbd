@@ -44,16 +44,16 @@
 #define DEFAULT_HID_IDLE_TIMEOUT              60000
 
 // Minimum connection interval (units of 1.25ms)
-#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     8
+#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     16//8
 
 // Maximum connection interval (units of 1.25ms)
-#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     15
+#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     32//15
 
 // Low energy connection interval (units of 1.25ms)
-#define LE_DESIRED_MIN_CONN_INTERVAL            40
+#define LE_DESIRED_MIN_CONN_INTERVAL            64//40
 
 // Low energy connection interval (units of 1.25ms)
-#define LE_DESIRED_MAX_CONN_INTERVAL            80
+#define LE_DESIRED_MAX_CONN_INTERVAL            128//80
 
 // Slave latency to use if parameter update request
 #define DEFAULT_DESIRED_SLAVE_LATENCY         5
@@ -429,7 +429,7 @@ uint16 HidEmu_ProcessEvent(uint8 task_id, uint16 events)
             retry = 0;
         }
 
-        PRINT("conn param updata: %#x, %#x, %#x, %#x\n",conn_params.interval_min,
+        PRINT("conn param update: %#x, %#x, %#x, %#x\n",conn_params.interval_min,
                     conn_params.interval_max,
                     conn_params.latency,
                     conn_params.timeout);

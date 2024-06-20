@@ -10,6 +10,7 @@
 #include "USB_task/USB_kbd.h"
 #include "led_task/led_task.h"
 #include "HAL/HAL.h"
+#include "HAL/ADC.h"
 #include "BLE/hidkbd.h"
 
 uint8_t pm_task_id = 0;
@@ -45,9 +46,11 @@ void pm_start_working(int working_timeout, int idle_timeout)
     pm_is_idle = false;
 
     if(working_timeout >= 0) {
+        if (GetChargingState()) working_timeout = PM_TIMEOUT_FOREVER;
         tmos_start_task(pm_task_id, PM_ENTER_IDLE_EVENT, MS1_TO_SYSTEM_TIME(working_timeout));
 
         if(idle_timeout >=0) {
+            if (GetChargingState()) idle_timeout = PM_TIMEOUT_FOREVER;
             tmos_start_task(pm_task_id, PM_ENTER_STANDBY_EVENT, MS1_TO_SYSTEM_TIME(idle_timeout));
         } else {
             //PM_DBG("Warning: invalid idle_time! \n");
@@ -90,7 +93,6 @@ uint16_t pm_event(uint8_t task_id, uint16_t events)
         }else{
             pm_is_idle = true;
         }
-        update_led_state();
         if(device_mode == MODE_BLE)
             OnBoard_SendMsg(hidEmuTaskId, RF_MS_STATE_CHANGE, PM_STATE_SLEEP, NULL);
 

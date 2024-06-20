@@ -67,31 +67,33 @@ void update_led_state(){
     LedMode led_blue_mode = LED_OFF;
 
     // Don't turn on LEDs during sleep.
-    if (pm_is_in_idle()) return;
+    if (!pm_is_in_idle()){
+        if (is_keyboard_init){
+            led_yellow_mode = LED_CONSTANT_ON;
+            led_green_mode = LED_CONSTANT_ON;
+            led_blue_mode = LED_CONSTANT_ON;
+        } else {
+            if (led_capslock_on) led_green_mode = LED_CONSTANT_ON;
 
-    if (is_keyboard_init){
-        led_yellow_mode = LED_CONSTANT_ON;
-        led_green_mode = LED_CONSTANT_ON;
-        led_blue_mode = LED_CONSTANT_ON;
-    } else {
-        if (led_capslock_on) led_green_mode = LED_CONSTANT_ON;
+            uint8_t percentage = GetBatteryPercentage();
+            if (led_numlock_on) led_yellow_mode = LED_CONSTANT_ON;
+            else if (percentage<10) led_yellow_mode = LED_BLINK_3;
+            else if (percentage<15) led_yellow_mode = LED_BLINK_2;
+            else if (percentage<20) led_yellow_mode = LED_BLINK_1;
 
-        uint8_t percentage = GetBatteryPercentage();
-        if (led_numlock_on) led_yellow_mode = LED_CONSTANT_ON;
-        else if (percentage<10) led_yellow_mode = LED_BLINK_3;
-        else if (percentage<15) led_yellow_mode = LED_BLINK_2;
-        else if (percentage<20) led_yellow_mode = LED_BLINK_1;
-
-        if (bluetooth_state == BLULETOOTH_PAIRING)
-            led_blue_mode = LED_FLASH;
-        else if (bluetooth_state == BLULETOOTH_CONNECTED_1)
-            led_blue_mode = LED_BLINK_1;
-        else if (bluetooth_state == BLULETOOTH_CONNECTED_2)
-            led_blue_mode = LED_BLINK_2;
-        else if (bluetooth_state == BLULETOOTH_CONNECTED_3)
-            led_blue_mode = LED_BLINK_3;
-        else if (bluetooth_state == BLULETOOTH_CONNECTED_4)
-            led_blue_mode = LED_BLINK_4;
+            if (device_mode == MODE_USB || bluetooth_state == BLULETOOTH_OFF)
+                led_blue_mode = LED_OFF;
+            else if (bluetooth_state == BLULETOOTH_PAIRING)
+                led_blue_mode = LED_FLASH;
+            else if (bluetooth_state == BLULETOOTH_CONNECTED_1)
+                led_blue_mode = LED_BLINK_1;
+            else if (bluetooth_state == BLULETOOTH_CONNECTED_2)
+                led_blue_mode = LED_BLINK_2;
+            else if (bluetooth_state == BLULETOOTH_CONNECTED_3)
+                led_blue_mode = LED_BLINK_3;
+            else if (bluetooth_state == BLULETOOTH_CONNECTED_4)
+                led_blue_mode = LED_BLINK_4;
+        }
     }
     // Sets the value of LED
     if(led_mode_to_state(led_yellow_mode)) led_on(LED_YELLOW);

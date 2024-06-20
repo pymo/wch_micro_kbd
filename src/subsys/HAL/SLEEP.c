@@ -51,7 +51,7 @@ void suspend_to_ram(uint32_t ticks)
                         | RB_PWR_CORE
                         | RB_PWR_RAM2K
                         | RB_PWR_RAM30K
-                       // | RB_PWR_EXTEND
+                        | RB_PWR_EXTEND
 #if DCDC_ENABLE
                         | RB_PWR_DCDC_PRE
                         | RB_PWR_DCDC_EN
@@ -334,7 +334,6 @@ u32 CH58X_LowPower( u32 time )
       return 2;
   }
 #endif
-
   SYS_DisableAllIrq( &irq_status );
   time_curr = RTC_GetCycle32k();
   // 检测睡眠时间
@@ -343,7 +342,8 @@ u32 CH58X_LowPower( u32 time )
   } else {
       time_sleep = time - time_curr;
   }
-  
+  //PRINT("CH58X_LowPower(%d)\n",time_sleep);
+
   // 若睡眠时间小于最小睡眠时间或大于最大睡眠时间，则不睡眠
   if ((time_sleep < SLEEP_RTC_MIN_TIME) || 
       (time_sleep > SLEEP_RTC_MAX_TIME)) {

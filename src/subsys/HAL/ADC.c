@@ -5,16 +5,20 @@
  *      Author: chen_xin_ming
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include "soc.h"
 #include "ADC.h"
+#include "PM/pm_task.h"
 
 uint8_t battery_percentage = 100;
+bool is_charging = false;
 
 uint8_t GetBatteryPercentage() {
     return battery_percentage;
+}
+bool GetChargingState(){
+    return is_charging;
 }
 
 // We don't bother converting the raw value to volts. We just measure the raw value across the
@@ -94,4 +98,12 @@ void ADCBatterySample() {
     PRINT("adc sample: %d, offset: %d voltage: %d\n", adcavg, RoughCalib_Value,
             voltage_mv);
     battery_percentage = AdcToBatteryPercentage(adcavg);
+    // Checks if it's charging
+    GPIOA_ModeCfg(GPIO_Pin_13, GPIO_ModeIN_Floating);
+    bool current_charging = GPIOA_ReadPortPin(GPIO_Pin_13);
+    if(is_charging != current_charging){
+        is_charging = current_charging;
+        PRINT("is_charging: %d\n", is_charging);
+        pm_start_working(PM_WORKING_TIMEOUT, PM_IDLE_TIMEOUT);
+    }
 }

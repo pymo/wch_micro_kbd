@@ -8,9 +8,12 @@
 #ifndef SUBSYS_HAL_ADC_H_
 #define SUBSYS_HAL_ADC_H_
 
+#include <stdbool.h>
+
 #define ADC_INTERVAL_MS 12000
 
 void ADCBatterySample();
 uint8_t GetBatteryPercentage();
+bool GetChargingState();
 
 #endif /* SUBSYS_HAL_ADC_H_ */

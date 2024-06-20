@@ -19,7 +19,7 @@ uint32_t KEYBOARD_REBOOT_DELAY_MS = 600;
 
 __HIGH_CODE
 void RstAllPins(void) {
-    //GPIOB_ModeCfg(GPIO_Pin_4, GPIO_ModeIN_PU);      // RXD-≈‰÷√…œ¿≠ ‰»Î
+    GPIOB_ResetBits(LED_YELLOW|LED_GREEN|LED_BLUE);      // Turn off LED
 }
 
 __HIGH_CODE
@@ -133,7 +133,8 @@ void key_loop() {
             ms_last_state_change = ms_current;
             GPIOB_ResetBits(VCC_PIN);
 #ifdef PPK_TYPE_HANDSPRING
-            k_state = K_STATE_5_RTS_HIGH; // Handspring does not have DCD and RTS line, jump directly to serial ID receive.
+            // TODO(): This should be K_STATE_5_RTS_HIGH, but the hardware circuit has some issues when directly connecting RXD0, should change back to K_STATE_5_RTS_HIGH once we have 0ohm disconnect in the circuit.
+            k_state = K_STATE_6_ID_RECEIVED; // Handspring does not have DCD and RTS line, jump directly to serial ID receive.
 #else
             k_state = K_STATE_2_ON;
 #endif
