@@ -35,7 +35,7 @@
  * CONSTANTS
  */
 // Param update delay
-#define START_PARAM_UPDATE_EVT_DELAY          3200
+#define START_PARAM_UPDATE_EVT_DELAY          12800
 
 // Param update delay
 #define START_PHY_UPDATE_DELAY                1600
@@ -44,19 +44,19 @@
 #define DEFAULT_HID_IDLE_TIMEOUT              60000
 
 // Minimum connection interval (units of 1.25ms)
-#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     16//8
+#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     12
 
 // Maximum connection interval (units of 1.25ms)
-#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     32//15
+#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     24
 
 // Low energy connection interval (units of 1.25ms)
-#define LE_DESIRED_MIN_CONN_INTERVAL            64//40
+#define LE_DESIRED_MIN_CONN_INTERVAL            40
 
 // Low energy connection interval (units of 1.25ms)
-#define LE_DESIRED_MAX_CONN_INTERVAL            128//80
+#define LE_DESIRED_MAX_CONN_INTERVAL            80
 
 // Slave latency to use if parameter update request
-#define DEFAULT_DESIRED_SLAVE_LATENCY         5
+#define DEFAULT_DESIRED_SLAVE_LATENCY         3
 
 // Supervision timeout value (units of 10ms)
 #define DEFAULT_DESIRED_CONN_TIMEOUT          300
@@ -77,7 +77,7 @@
 #define DEFAULT_IO_CAPABILITIES               GAPBOND_IO_CAP_NO_INPUT_NO_OUTPUT
 
 // Battery level is critical when it is less than this %
-#define DEFAULT_BATT_CRITICAL_LEVEL           6
+#define DEFAULT_BATT_CRITICAL_LEVEL           10
 
 /*********************************************************************
  * TYPEDEFS
@@ -218,7 +218,7 @@ bool bt_adv_data_init(void) {
         GAP_SetParamValue(TGAP_DISC_ADV_INT_MIN, advInt);
         GAP_SetParamValue(TGAP_DISC_ADV_INT_MAX, advInt);
 
-        PRINT("type = %d\n",device_bond.ID[ID_Num].remote_addr_type);
+        PRINT("remote_addr_type = %d\n",device_bond.ID[ID_Num].remote_addr_type);
 
 //         if(device_bond.ID[ID_Num].remote_addr_type == ADDRTYPE_PUBLIC) {
 
@@ -226,18 +226,22 @@ bool bt_adv_data_init(void) {
 
 
         if(device_bond.ID[ID_Num].remote_addr_type&0x30){
+            PRINT("1111111\n");
             GAPBondMgr_SetParameter( GAPBOND_AUTO_SYNC_RL, sizeof(uint8), &enable);
         }
         else{
+            PRINT("2222222\n");
             enable = DISABLE;
             GAPBondMgr_SetParameter( GAPBOND_AUTO_SYNC_RL, sizeof(uint8), &enable);
         }
 
         if(direct_count < 2)
         {
+            PRINT("3333333\n");
          bt_adv_direct(device_bond.ID[ID_Num].remote_addr_type,
                  device_bond.ID[ID_Num].remote_addr);
         }else{
+            PRINT("4444444\n");
         uint8_t adv_event_type;
         adv_event_type = GAP_ADTYPE_ADV_IND;
         GAPRole_SetParameter( GAPROLE_ADV_EVENT_TYPE, sizeof(adv_event_type),
@@ -249,6 +253,7 @@ bool bt_adv_data_init(void) {
         }
     }
     else{
+        PRINT("5555555\n");
         scanRspData[26] = '1' + ID_Num;
         attDeviceName[13] = '1' + ID_Num;
 
@@ -283,7 +288,7 @@ void bt_bond_init(void) {
     uint8 mitm = DEFAULT_MITM_MODE;
     uint8 ioCap = DEFAULT_IO_CAPABILITIES;
     uint8 bonding = DEFAULT_BONDING_MODE;
-    uint8 erase = DISABLE;
+    uint8 erase = ENABLE;
 
 
     GAPBondMgr_SetParameter( GAPBOND_PERI_DEFAULT_PASSCODE, sizeof(uint32),
@@ -412,11 +417,11 @@ uint16 HidEmu_ProcessEvent(uint8 task_id, uint16 events)
             return (events ^ START_PARAM_UPDATE_EVT);
         }
 
-//         PRINT("current interval: %#x\n", conn_params.interval_current);
-//         PRINT("min interval: %#x\n", conn_params.interval_min);
-//         PRINT("max interval: %#x\n", conn_params.interval_max);
-        if(conn_params.interval_current >= conn_params.interval_min )
-        if(conn_params.interval_current <= conn_params.interval_max){
+
+        // If the negotiated interval and timeout does not meet the desired value, re-negotiate up to 5 times.
+        if(conn_params.interval_current >= conn_params.interval_min &&
+                conn_params.interval_current <= conn_params.interval_max &&
+                conn_params.timeout <= DEFAULT_DESIRED_CONN_TIMEOUT){
             retry = 0;
 
             return (events ^ START_PARAM_UPDATE_EVT);
@@ -424,7 +429,7 @@ uint16 HidEmu_ProcessEvent(uint8 task_id, uint16 events)
 
         retry++;
         if(retry < 5){
-            tmos_start_task(hidEmuTaskId, START_PARAM_UPDATE_EVT, MS1_TO_SYSTEM_TIME(1000));
+            tmos_start_task(hidEmuTaskId, START_PARAM_UPDATE_EVT, MS1_TO_SYSTEM_TIME(2000));
         } else {
             retry = 0;
         }
@@ -432,13 +437,12 @@ uint16 HidEmu_ProcessEvent(uint8 task_id, uint16 events)
         PRINT("conn param update: %#x, %#x, %#x, %#x\n",conn_params.interval_min,
                     conn_params.interval_max,
                     conn_params.latency,
-                    conn_params.timeout);
-
+                    DEFAULT_DESIRED_CONN_TIMEOUT);
         GAPRole_PeripheralConnParamUpdateReq(hidEmuConnHandle,
             conn_params.interval_min,
             conn_params.interval_max,
             conn_params.latency,
-            conn_params.timeout, hidEmuTaskId);
+            DEFAULT_DESIRED_CONN_TIMEOUT, hidEmuTaskId);
 
         return (events ^ START_PARAM_UPDATE_EVT);
     }
@@ -658,7 +662,6 @@ static void hidEmuStateCB(gapRole_States_t newState, gapRoleEvent_t * pEvent) {
             hidEmuConnHandle = event->connectionHandle;
             tmos_start_task(hidEmuTaskId, START_PARAM_UPDATE_EVT,START_PARAM_UPDATE_EVT_DELAY);
             tmos_start_task(hidEmuTaskId,OPEN_NOTE_EVT,1600);
-            set_bluetooth_indicator(BLULETOOTH_CONNECTED_1+device_bond.ID_Num);
             PRINT("Connected..\n");
 
             tmos_memcpy(devAddr, event->devAddr, 6);
@@ -680,11 +683,11 @@ static void hidEmuStateCB(gapRole_States_t newState, gapRoleEvent_t * pEvent) {
             PRINT("Waiting for advertising..\n");
         } else if (pEvent->gap.opcode == GAP_LINK_TERMINATED_EVENT) {
             hidEmuConnHandle = GAP_CONNHANDLE_INIT;
-            PRINT("Disconnected.. Reason:%x\n", pEvent->linkTerminate.reason);
+            PRINT("Disconnected.. Reason:0x%x\n", pEvent->linkTerminate.reason);
             /* Prevent reconnection */
             if (terminate_flag) {
                 terminate_flag = false;
-
+                HidEmu_Init();
                 break;
             }
         } else if (pEvent->gap.opcode == GAP_LINK_ESTABLISHED_EVENT) {

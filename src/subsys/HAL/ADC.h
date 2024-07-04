@@ -10,7 +10,7 @@
 
 #include <stdbool.h>
 
-#define ADC_INTERVAL_MS 12000
+#define ADC_INTERVAL_MS 60000 //12000
 
 void ADCBatterySample();
 uint8_t GetBatteryPercentage();

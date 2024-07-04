@@ -20,9 +20,10 @@ void handle_button_state(){
         consecutive_button_down_count = 0;
     }
     if(consecutive_button_down_count*BUTTON_READ_INTERVAL_MS>BUTTON_LONG_PRESS_MS){
-        PRINT("Pair button long press, clear pairing.");
+        PRINT("Pair button long press, clear Data Flash.\n");
         consecutive_button_down_count = 0;
-        ResetDeviceInfo("all");
+        bool success = EEPROM_ERASE(0, EEPROM_MAX_SIZE);
+        PRINT("Erase Data Flash %s.\n", (success==0)?"success":"fail");
         SYS_ResetExecute();
     }
 }

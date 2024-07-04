@@ -29,11 +29,20 @@ bool GetChargingState(){
 // This lookup table must have 21 entries. Each entry must be different,
 // otherwise we will have divide-by-zero error below.
 
+// 301230 battery
 const uint32_t bat_percent_lookup[] = {
         2375, 3164, 3304, 3353, 3376, 3407,
         3427, 3450, 3473, 3497, 3524, 3551,
         3584, 3617, 3652, 3693, 3729, 3767,
         3817, 3861, 3947 };
+
+/*  // 551430 battery
+ const uint32_t bat_percent_lookup[] = {
+        2566, 3254, 3345, 3383, 3432, 3475,
+        3501, 3539, 3581, 3609, 3621, 3631,
+        3652, 3682, 3714, 3748, 3785, 3824,
+        3872, 3929, 3990 };
+ */
 #define BAT_SAMPLE_WINDOW_SIZE 5
 
 uint8_t AdcToBatteryPercentage(uint32_t adc_value) {
@@ -103,7 +112,7 @@ void ADCBatterySample() {
     bool current_charging = GPIOA_ReadPortPin(GPIO_Pin_13);
     if(is_charging != current_charging){
         is_charging = current_charging;
-        PRINT("is_charging: %d\n", is_charging);
+        PRINT("Charging state: %s\n", is_charging?"true, sleep disabled":"false, sleep enabled");
         pm_start_working(PM_WORKING_TIMEOUT, PM_IDLE_TIMEOUT);
     }
 }

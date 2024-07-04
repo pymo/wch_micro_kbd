@@ -315,8 +315,8 @@ bStatus_t Batt_MeasLevel( void )
 
   level = battMeasure();
 
-  // If level has gone down
-  if (level < battLevel)
+  // If level has changed
+  if (level != battLevel)
   {
     // Update level
     battLevel = level;

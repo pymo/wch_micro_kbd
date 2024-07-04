@@ -19,6 +19,7 @@
 #include "hidkbd.h"
 #include "hiddev.h"
 #include "device_config.h"
+#include "led_task/led_task.h"
 
 /*********************************************************************
  * MACROS
@@ -861,7 +862,7 @@ static void hidDevGapStateCB( gapRole_States_t newState, gapRoleEvent_t * pEvent
 static void hidDevParamUpdateCB( uint16 connHandle, uint16 connInterval,
                                  uint16 connSlaveLatency, uint16 connTimeout )
 {
-  PRINT("Update %d - Int 0x%x - Latency %d\n", connHandle, connInterval, connSlaveLatency);
+  PRINT("Update %d - Int 0x%x - Latency %d - Timeout %d\n", connHandle, connInterval, connSlaveLatency, connTimeout);
   conn_params.interval_current = connInterval;
   conn_params.latency = connSlaveLatency;
   conn_params.timeout = connTimeout;
@@ -876,11 +877,13 @@ static void hidDevParamUpdateCB( uint16 connHandle, uint16 connInterval,
  */
 static void hidDevPairStateCB( uint16 connHandle, uint8 state, uint8 status )
 {
+  PRINT("GAPBOND_PAIRING_STATE: %d, status: %d\n", state, status);
   if ( state == GAPBOND_PAIRING_STATE_COMPLETE )
   {
     if ( status == SUCCESS )
     {
       hidDevConnSecure = TRUE;
+      set_bluetooth_indicator(BLULETOOTH_CONNECTED_1+device_bond.ID_Num);
     }
 
     pairingStatus = status;
@@ -890,6 +893,7 @@ static void hidDevPairStateCB( uint16 connHandle, uint8 state, uint8 status )
     if ( status == SUCCESS )
     {
       hidDevConnSecure = TRUE;
+      set_bluetooth_indicator(BLULETOOTH_CONNECTED_1+device_bond.ID_Num);
 
 #if DEFAULT_SCAN_PARAM_NOTIFY_TEST == TRUE
       ScanParam_RefreshNotify( gapConnHandle );
@@ -937,7 +941,7 @@ static void hidDevPairStateCB( uint16 connHandle, uint8 state, uint8 status )
 
     PRINT("addr type: %#x\n", device_bond.ID[ID_Num].remote_addr_type);
     SaveDeviceInfo("device_bond");
-    LOG_DEBUG("Bond info saved!");
+    PRINT("Bond info saved!\n");
   }
 }
 

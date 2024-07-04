@@ -15,7 +15,7 @@
 
 uint32_t last_pressed = 0;
 KEYBOARD_BOOT_STATE k_state = K_STATE_0_START;
-uint32_t KEYBOARD_REBOOT_DELAY_MS = 600;
+bool is_first_boot = true;
 
 __HIGH_CODE
 void RstAllPins(void) {
@@ -129,12 +129,13 @@ void key_loop() {
         k_state = K_STATE_1_OFF;
         break;
     case K_STATE_1_OFF:
-        if (ms_current > ms_last_state_change + KEYBOARD_REBOOT_DELAY_MS) {
+        if (ms_current > ms_last_state_change + (is_first_boot)?KEYBOARD_REBOOT_DELAY_MS_LONG:KEYBOARD_REBOOT_DELAY_MS_SHORT) {
             ms_last_state_change = ms_current;
             GPIOB_ResetBits(VCC_PIN);
 #ifdef PPK_TYPE_HANDSPRING
             // TODO(): This should be K_STATE_5_RTS_HIGH, but the hardware circuit has some issues when directly connecting RXD0, should change back to K_STATE_5_RTS_HIGH once we have 0ohm disconnect in the circuit.
-            k_state = K_STATE_6_ID_RECEIVED; // Handspring does not have DCD and RTS line, jump directly to serial ID receive.
+            k_state = K_STATE_6_ID_RECEIVED;
+            PRINT("Keyboard init complete.\n");
 #else
             k_state = K_STATE_2_ON;
 #endif
@@ -185,8 +186,7 @@ void key_loop() {
         keyboard_id_buff_len += len;
             // Checks keyboard ID
             if (ContainsKeyboardId(keyboard_id_buff, keyboard_id_buff_len)){
-                PRINT("Keyboard init complete.\n");
-                KEYBOARD_REBOOT_DELAY_MS = 100;
+                is_first_boot = false;
                 last_pressed = ms_current;
                 ms_last_state_change = ms_current;
                 k_state = K_STATE_6_ID_RECEIVED;
@@ -194,6 +194,7 @@ void key_loop() {
             }
         break;
     case K_STATE_6_ID_RECEIVED:
+        ms_last_state_change = ms_current;
         key_deal();
         break;
     }

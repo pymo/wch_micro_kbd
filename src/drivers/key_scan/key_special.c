@@ -268,13 +268,14 @@ void switch_ble_channel(struct speical_data *data, uint8_t channel)
         PRINT("Channel %d current MAC: ( ", channel);
 
         for (int i = 0; i < 6; i++) {
-            PRINT("%#x ", device_bond.ID[0].local_addr[i]);
+            PRINT("%#x ", device_bond.ID[channel-1].local_addr[i]);
         }
         PRINT(")\n");
 
         device_bond.ID[channel-1].isbond = false;
         device_bond.ID_Num = channel-1;
         device_bond.ID[channel-1].local_addr[2]++;
+        SaveDeviceInfo("device_bond");
         needs_mode_change = true;
 
     } else {

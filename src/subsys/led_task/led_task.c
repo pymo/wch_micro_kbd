@@ -76,8 +76,8 @@ void update_led_state(){
             if (led_capslock_on) led_green_mode = LED_CONSTANT_ON;
 
             uint8_t percentage = GetBatteryPercentage();
-            if (led_numlock_on) led_yellow_mode = LED_CONSTANT_ON;
-            else if (percentage<10) led_yellow_mode = LED_BLINK_3;
+            //if (led_numlock_on) led_yellow_mode = LED_CONSTANT_ON; else
+            if (percentage<10) led_yellow_mode = LED_BLINK_3;
             else if (percentage<15) led_yellow_mode = LED_BLINK_2;
             else if (percentage<20) led_yellow_mode = LED_BLINK_1;
 
@@ -130,6 +130,7 @@ void led_task_init(void)
     tmos_set_event(led_taskid,LED_UPDATE_EVENT);
 }
 
+// Num lock is not handled on PPK because it does not have num key area.
 void set_led_num(bool s) {
     led_numlock_on = s;
 }
