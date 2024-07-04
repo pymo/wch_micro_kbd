@@ -10,13 +10,13 @@ Open it to install, the setting instructions are as follows:
 - "Object File1" selects the firmware file (*.hex) to be burned;
 - Set the "Download Config" section as shown in Figure 1
 
-![Figure 1. WCHISPTool UI](/images/wch_isp_tool.jpg "Figure 1. WCHISPTool UI")
+![Figure 1. WCHISPTool UI](/doc/images/wch_isp_tool.jpg "Figure 1. WCHISPTool UI")
 
 2. Use a USB type-C cable to connect the CH582 module to the PC.
 
 3. Press and hold the reset button with a needle/paper clip, then insert the module into the keyboard (which will turn the module on), then release the reset button.
 
-![Figure 2. Enter Download mode](/images/enter_download_mode.jpg "Figure 2. Enter Download mode")
+![Figure 2. Enter Download mode](/doc/images/enter_download_mode.jpg "Figure 2. Enter Download mode")
 
 4. The firmware should start download automatically. There should be a prompt indicating that the download is Succeed, as shown in Figure 2.
 
