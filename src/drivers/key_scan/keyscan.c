@@ -303,7 +303,7 @@ int readKeyVal(void) {
     bool is_key;
     static bool is_long_key_trigged = false;
 
-    is_key = !tmos_isbufset(current_key_map, 0, sizeof(current_key_map));
+    is_key = (key_num!=0);//!tmos_isbufset(current_key_map, 0, sizeof(current_key_map));
 
     static uint32_t last_time = 0;
     uint32_t current_time = get_current_time();
@@ -316,7 +316,7 @@ int readKeyVal(void) {
         }
         is_long_key_trigged = true;
 
-        PRINT("long key triggered\n");
+        PRINT("long key triggered.\n");
     } else {
         is_long_key_trigged = false;
     }

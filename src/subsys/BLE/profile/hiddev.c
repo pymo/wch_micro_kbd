@@ -233,6 +233,7 @@ uint16 HidDev_ProcessEvent( uint8 task_id, uint16 events )
   {
     // Start the Device
     GAPRole_PeripheralStartDevice( hidDevTaskId, &hidDevBondCB, &hidDev_PeripheralCBs );
+    //tmos_start_task( hidDevTaskId, SBP_READ_RSSI_EVT, MS1_TO_SYSTEM_TIME(1000) );
 
     return ( events ^ START_DEVICE_EVT );
   }
@@ -291,7 +292,7 @@ uint16 HidDev_ProcessEvent( uint8 task_id, uint16 events )
 static void hidDevRssiCB( uint16 connHandle, int8 rssi )
 {
 
-//  PRINT( "RSSI -%d dB Conn  %x \n", -rssi, connHandle);
+  PRINT( "RSSI -%d dB Conn  %x \n", -rssi, connHandle);
 ////  SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(rssi), &rssi);
 //
 //  attHandleValueNoti_t noti;

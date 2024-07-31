@@ -25,6 +25,7 @@ extern "C" {
 typedef enum{
     BLULETOOTH_OFF,
     BLULETOOTH_PAIRING,
+    BLULETOOTH_RECONNECTING,
     BLULETOOTH_CONNECTED_1,
     BLULETOOTH_CONNECTED_2,
     BLULETOOTH_CONNECTED_3,
@@ -35,6 +36,8 @@ typedef enum{
     LED_OFF,
     LED_CONSTANT_ON,
     LED_FLASH,
+    LED_ALT_FLASH_1,
+    LED_ALT_FLASH_2,
     LED_BLINK_1,
     LED_BLINK_2,
     LED_BLINK_3,
@@ -47,7 +50,8 @@ void update_led_state(void);
 
 // LED behavior:
 // Blue LED: Bluetooth state / pairing.
-//   - constant blink: pairing
+//   - Alternating blink with Yellow LED: Pairing
+//   - constant blink: reconnecting
 //   - blink once: connected to host 1
 //   - blink twice: connected to host 2
 //   - blink three times: connected to host 3

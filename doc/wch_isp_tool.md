@@ -17,7 +17,7 @@ Open it to install, the setting instructions are as follows:
 
 ![Figure 2. Enter Download mode](/doc/images/enter_download_mode.jpg "Figure 2. Enter Download mode")
 
-4. The firmware should start download automatically. There should be a prompt indicating that the download has succeeded, as shown in Figure 2.
+4. The firmware should start download automatically. There should be a prompt indicating that the download has succeeded, as shown in Figure 1.
 
 5. After the firmware download, the new firmware should start running automatically. If it didn't , re-attach the module to power cycle it.
 

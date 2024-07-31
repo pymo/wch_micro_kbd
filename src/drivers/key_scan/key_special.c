@@ -26,6 +26,9 @@ enum special_key_flag {
     SPECIAL_KEY_VOL_INC,
     SPECIAL_KEY_BRIGHTNESS_DEC,
     SPECIAL_KEY_BRIGHTNESS_INC,
+    SPECIAL_KEY_PLAY,
+    SPECIAL_KEY_PREVIOUS,
+    SPECIAL_KEY_NEXT,
     SPECIAL_KEY_HOME,
     SPECIAL_KEY_BACK,
     SPECIAL_KEY_MODE_USB,
@@ -78,8 +81,11 @@ static const uint8_t special_key_map[SPECIAL_KEY_NUM] = {
         HID_KEY_ARROW_UP,  // SPECIAL_KEY_VOL_INC,
         HID_KEY_ARROW_LEFT,  // SPECIAL_KEY_BRIGHTNESS_DEC,
         HID_KEY_ARROW_RIGHT,  // SPECIAL_KEY_BRIGHTNESS_INC,
-        HID_KEY_GUI_LEFT,  // SPECIAL_KEY_HOME,
-        HID_KEY_GUI_RIGHT,  // SPECIAL_KEY_BACK, not present in keyboard, just a placeholder
+        HID_KEY_SPACE,  // SPECIAL_KEY_PLAY,
+        HID_KEY_COMMA,  // SPECIAL_KEY_PREVIOUS,
+        HID_KEY_PERIOD,  // SPECIAL_KEY_NEXT,
+        HID_KEY_WWW_HOME,  // SPECIAL_KEY_HOME,
+        HID_KEY_BACKSPACE,  // SPECIAL_KEY_BACK
         HID_KEY_U,  // SPECIAL_KEY_MODE_USB
         HID_KEY_A,  // SPECIAL_KEY_BLE_CHAN_1,
         HID_KEY_S,  // SPECIAL_KEY_BLE_CHAN_2,
@@ -192,6 +198,18 @@ static void brightness_inc(struct speical_data *data){
 
 static void www_back(struct speical_data *data){
     send_consumer_key(data, HID_USAGE_CONSUMER_WWW_BACK);
+}
+
+static void www_play(struct speical_data *data){
+    send_consumer_key(data, HID_USAGE_CONSUMER_PLAYPAUSE);
+}
+
+static void www_previous(struct speical_data *data){
+    send_consumer_key(data, HID_USAGE_CONSUMER_SCAN_PREVIOUS_TRACK);
+}
+
+static void www_next(struct speical_data *data){
+    send_consumer_key(data, HID_USAGE_CONSUMER_SCAN_NEXT_TRACK);
 }
 
 static void www_home(struct speical_data *data){
@@ -311,6 +329,9 @@ static const struct special_handler handler[] = {
     SPECIAL_HANDLER(SPECIAL_KEY_VOL_INC, vol_inc),
     SPECIAL_HANDLER(SPECIAL_KEY_BRIGHTNESS_DEC, brightness_dec),
     SPECIAL_HANDLER(SPECIAL_KEY_BRIGHTNESS_INC, brightness_inc),
+    SPECIAL_HANDLER(SPECIAL_KEY_PLAY, www_play),
+    SPECIAL_HANDLER(SPECIAL_KEY_PREVIOUS, www_previous),
+    SPECIAL_HANDLER(SPECIAL_KEY_NEXT, www_next),
     SPECIAL_HANDLER(SPECIAL_KEY_HOME, www_home),
     SPECIAL_HANDLER(SPECIAL_KEY_BACK, www_back),
     SPECIAL_HANDLER(SPECIAL_KEY_MODE_USB, mode_usb),

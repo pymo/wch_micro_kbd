@@ -221,6 +221,9 @@ void FnHidKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
         case HID_KEY_EQUAL:
             hid_keycodes[i] = HID_KEY_F12;
             break;
+        case HID_KEY_INSERT:
+            hid_keycodes[i] = HID_KEY_PRINT_SCREEN;
+            break;
         default:
             break;
         }

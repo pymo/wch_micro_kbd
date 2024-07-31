@@ -44,10 +44,10 @@
 #define DEFAULT_HID_IDLE_TIMEOUT              60000
 
 // Minimum connection interval (units of 1.25ms)
-#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     12
+#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     9
 
 // Maximum connection interval (units of 1.25ms)
-#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     24
+#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     12
 
 // Low energy connection interval (units of 1.25ms)
 #define LE_DESIRED_MIN_CONN_INTERVAL            40
@@ -214,6 +214,7 @@ bool bt_adv_data_init(void) {
 
 
     if (device_bond.ID[ID_Num].isbond) {
+        set_bluetooth_indicator(BLULETOOTH_RECONNECTING);
 
         GAP_SetParamValue(TGAP_DISC_ADV_INT_MIN, advInt);
         GAP_SetParamValue(TGAP_DISC_ADV_INT_MAX, advInt);
@@ -226,22 +227,18 @@ bool bt_adv_data_init(void) {
 
 
         if(device_bond.ID[ID_Num].remote_addr_type&0x30){
-            PRINT("1111111\n");
             GAPBondMgr_SetParameter( GAPBOND_AUTO_SYNC_RL, sizeof(uint8), &enable);
         }
         else{
-            PRINT("2222222\n");
             enable = DISABLE;
             GAPBondMgr_SetParameter( GAPBOND_AUTO_SYNC_RL, sizeof(uint8), &enable);
         }
 
         if(direct_count < 2)
         {
-            PRINT("3333333\n");
          bt_adv_direct(device_bond.ID[ID_Num].remote_addr_type,
                  device_bond.ID[ID_Num].remote_addr);
         }else{
-            PRINT("4444444\n");
         uint8_t adv_event_type;
         adv_event_type = GAP_ADTYPE_ADV_IND;
         GAPRole_SetParameter( GAPROLE_ADV_EVENT_TYPE, sizeof(adv_event_type),
@@ -253,7 +250,7 @@ bool bt_adv_data_init(void) {
         }
     }
     else{
-        PRINT("5555555\n");
+        set_bluetooth_indicator(BLULETOOTH_PAIRING);
         scanRspData[26] = '1' + ID_Num;
         attDeviceName[13] = '1' + ID_Num;
 
@@ -648,7 +645,6 @@ static void hidEmuStateCB(gapRole_States_t newState, gapRoleEvent_t * pEvent) {
 
     case GAPROLE_ADVERTISING:
         if (pEvent->gap.opcode == GAP_MAKE_DISCOVERABLE_DONE_EVENT) {
-            set_bluetooth_indicator(BLULETOOTH_PAIRING);
             PRINT("Advertising..\n");
         }
         break;

@@ -40,6 +40,13 @@ bool led_mode_to_state(LedMode led_mode){
         case LED_FLASH:
             ms_in_cycle = (tick % 240)*SYSTEM_TIME_MICROSEN/1000; // cycle is 150ms, 150ms/625us=240
             return (ms_in_cycle < 50);
+        // Flash cycle: 400ms. 200ms on, 200ms off
+        case LED_ALT_FLASH_1:
+            ms_in_cycle = (tick % 640)*SYSTEM_TIME_MICROSEN/1000; // cycle is 400ms, 400ms/625us=640
+            return (ms_in_cycle < 200);
+        case LED_ALT_FLASH_2:
+            ms_in_cycle = (tick % 640)*SYSTEM_TIME_MICROSEN/1000; // cycle is 400ms, 400ms/625us=640
+            return (ms_in_cycle >= 200);
         // Blink cycle = 3s
         //  |  On  |  Off  |  On  |  Off  |  On  |  Off  |  On  |  Off   |
         //  | 50ms | 150ms | 50ms | 150ms | 50ms | 150ms | 50ms | 2350ms |
@@ -83,8 +90,12 @@ void update_led_state(){
 
             if (device_mode == MODE_USB || bluetooth_state == BLULETOOTH_OFF)
                 led_blue_mode = LED_OFF;
-            else if (bluetooth_state == BLULETOOTH_PAIRING)
+            else if (bluetooth_state == BLULETOOTH_RECONNECTING)
                 led_blue_mode = LED_FLASH;
+            else if (bluetooth_state == BLULETOOTH_PAIRING){
+                led_blue_mode = LED_ALT_FLASH_1;
+                led_yellow_mode = LED_ALT_FLASH_2;
+            }
             else if (bluetooth_state == BLULETOOTH_CONNECTED_1)
                 led_blue_mode = LED_BLINK_1;
             else if (bluetooth_state == BLULETOOTH_CONNECTED_2)
