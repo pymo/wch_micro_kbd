@@ -15,7 +15,7 @@
 #include "RingBuffer/lwrb.h"
 #include "config.h"
 #include "RF_PHY/rf_sync.h"
-#include "key_scan/keyscan.h"
+#include "key_scan/key_table.h"
 
 #include "I2C/myi2c.h"
 
@@ -52,6 +52,7 @@ void Main_Circulation() {
  *******************************************************************************/
 int main(void)
 {
+    init_fn_key_table();
     PowerMonitor(ENABLE, LPLevel_2V5);
     PFIC_EnableIRQ(WDOG_BAT_IRQn);
 #if (defined (DCDC_ENABLE)) && (DCDC_ENABLE == TRUE)

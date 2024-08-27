@@ -7,14 +7,15 @@
 #include "key_parse.h"
 #include "key_table.h"
 #include "CH58x_common.h"
+#include "led_task/led_task.h"
 
 bool key_fn_flag;
 
-void keymap_to_keybuf8(uint8_t *index, uint8_t *keyVal, uint8_t len)
+void raw_to_hid_keycode(uint8_t *index, uint8_t *keyVal, uint8_t len)
 {
     for (int i = 0, idx = 0; i < len; i++)
     {
-        if (index[i]>sizeof(key8_table)){
+        if (index[i]>key8_table_size){
             PRINT("raw keycode %#x out of range!\n", index[i]);
             continue;
         }
@@ -55,13 +56,15 @@ uint8_t CompactIntegers(uint8_t *buf, uint8_t len)
             new_len++;
         }
     }
+    for (int i = new_len; i < len; i++) {
+        buf[i] = 0;
+    }
 
     return new_len;
 }
 
 void ModifierKeyHandler(uint8_t *hid_keycodes, uint8_t *keys, uint8_t nums)
 {
-    key_fn_flag = false;
     for (uint8_t i = 0; i < nums; ++i)
     {
         switch (hid_keycodes[i]){
@@ -97,159 +100,121 @@ void ModifierKeyHandler(uint8_t *hid_keycodes, uint8_t *keys, uint8_t nums)
             keys[0] |= KEYBOARD_MODIFIER_RIGHTGUI;
             hid_keycodes[i] = 0;
             break;
-        case HID_KEY_FN:
-            key_fn_flag = true;
+        default:
+            break;
+        }
+    }
+}
+
+// If Fn+key is mapped to another key, replace it here.
+// The result key may not be an simple HID keycode, it's OK, we will replace it in key_special.c
+void FnKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
+    if (!key_fn_flag) return;
+    for (uint8_t i = 0; i < nums; ++i)
+    {
+        uint8_t layer2_key = fn_key_table[hid_keycodes[i]];
+        if (layer2_key!=0){
+            hid_keycodes[i] = layer2_key;
+        }
+    }
+}
+
+void NumlockKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
+    if (!get_led_num()) return;
+    for (uint8_t i = 0; i < nums; ++i)
+    {
+        switch(hid_keycodes[i]){
+        case HID_KEY_M:
+            hid_keycodes[i] = HID_KEY_KEYPAD_0;
+            break;
+        case HID_KEY_J:
+            hid_keycodes[i] = HID_KEY_KEYPAD_1;
+            break;
+        case HID_KEY_K:
+            hid_keycodes[i] = HID_KEY_KEYPAD_2;
+            break;
+        case HID_KEY_L:
+            hid_keycodes[i] = HID_KEY_KEYPAD_3;
+            break;
+        case HID_KEY_U:
+            hid_keycodes[i] = HID_KEY_KEYPAD_4;
+            break;
+        case HID_KEY_I:
+            hid_keycodes[i] = HID_KEY_KEYPAD_5;
+            break;
+        case HID_KEY_O:
+            hid_keycodes[i] = HID_KEY_KEYPAD_6;
+            break;
+        case HID_KEY_7:
+            hid_keycodes[i] = HID_KEY_KEYPAD_7;
+            break;
+        case HID_KEY_8:
+            hid_keycodes[i] = HID_KEY_KEYPAD_8;
+            break;
+        case HID_KEY_9:
+            hid_keycodes[i] = HID_KEY_KEYPAD_9;
+            break;
+        case HID_KEY_PERIOD:
+            hid_keycodes[i] = HID_KEY_KEYPAD_DECIMAL;
+            break;
+        case HID_KEY_SLASH:
+            hid_keycodes[i] = HID_KEY_KEYPAD_DIVIDE;
+            break;
+        case HID_KEY_SEMICOLON:
+            hid_keycodes[i] = HID_KEY_KEYPAD_ADD;
+            break;
+        case HID_KEY_P:
+            hid_keycodes[i] = HID_KEY_KEYPAD_SUBTRACT;
+            break;
+        case HID_KEY_0:
+            hid_keycodes[i] = HID_KEY_KEYPAD_MULTIPLY;
+            break;
+        }
+    }
+}
+
+bool is_fn_pressed(uint8_t *hid_keycodes, uint8_t num){
+    for (uint8_t i = 0; i < num; ++i)
+    {
+        if (hid_keycodes[i] == HID_KEY_FN){
             hid_keycodes[i] = 0;
-            break;
-        default:
-            break;
+            return true;
         }
     }
+    return false;
 }
 
-#ifdef KEYBOARD_TYPE_G750
-// If Fn+key is mapped to another HID key (i.e. not consumer or special function), handle it here, otherwise handle it in key_special.c
-void FnHidKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
-    if (!key_fn_flag) return;
-    for (uint8_t i = 0; i < nums; ++i)
-    {
-        switch (hid_keycodes[i]){
-        case HID_KEY_TAB:
-            hid_keycodes[i] = HID_KEY_ESCAPE;
-            break;
-        case HID_KEY_ARROW_UP:
-            hid_keycodes[i] = HID_KEY_PAGE_UP;
-            break;
-        case HID_KEY_ARROW_DOWN:
-            hid_keycodes[i] = HID_KEY_PAGE_DOWN;
-            break;
-        case HID_KEY_ARROW_LEFT:
-            hid_keycodes[i] = HID_KEY_HOME;
-            break;
-        case HID_KEY_ARROW_RIGHT:
-            hid_keycodes[i] = HID_KEY_END;
-            break;
-        case HID_KEY_DELETE:
-            hid_keycodes[i] = HID_KEY_INSERT;
-            break;
-        case HID_KEY_1:
-            hid_keycodes[i] = HID_KEY_F1;
-            break;
-        case HID_KEY_2:
-            hid_keycodes[i] = HID_KEY_F2;
-            break;
-        case HID_KEY_3:
-            hid_keycodes[i] = HID_KEY_F3;
-            break;
-        case HID_KEY_4:
-            hid_keycodes[i] = HID_KEY_F4;
-            break;
-        case HID_KEY_5:
-            hid_keycodes[i] = HID_KEY_F5;
-            break;
-        case HID_KEY_6:
-            hid_keycodes[i] = HID_KEY_F6;
-            break;
-        case HID_KEY_7:
-            hid_keycodes[i] = HID_KEY_F7;
-            break;
-        case HID_KEY_8:
-            hid_keycodes[i] = HID_KEY_F8;
-            break;
-        case HID_KEY_9:
-            hid_keycodes[i] = HID_KEY_F9;
-            break;
-        case HID_KEY_0:
-            hid_keycodes[i] = HID_KEY_F10;
-            break;
-        case HID_KEY_MINUS:
-            hid_keycodes[i] = HID_KEY_F11;
-            break;
-        case HID_KEY_EQUAL:
-            hid_keycodes[i] = HID_KEY_F12;
-            break;
-        default:
-            break;
-        }
-    }
-}
-#endif
-
-#ifdef KEYBOARD_TYPE_PPK
-// If Fn+key is mapped to another HID key (i.e. not consumer or special function), handle it here, otherwise handle it in key_special.c
-void FnHidKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
-    if (!key_fn_flag) return;
-    for (uint8_t i = 0; i < nums; ++i)
-    {
-        switch (hid_keycodes[i]){
-        case HID_KEY_TAB:
-            hid_keycodes[i] = HID_KEY_ESCAPE;
-            break;
-        case HID_KEY_1:
-            hid_keycodes[i] = HID_KEY_F1;
-            break;
-        case HID_KEY_2:
-            hid_keycodes[i] = HID_KEY_F2;
-            break;
-        case HID_KEY_3:
-            hid_keycodes[i] = HID_KEY_F3;
-            break;
-        case HID_KEY_4:
-            hid_keycodes[i] = HID_KEY_F4;
-            break;
-        case HID_KEY_5:
-            hid_keycodes[i] = HID_KEY_F5;
-            break;
-        case HID_KEY_6:
-            hid_keycodes[i] = HID_KEY_F6;
-            break;
-        case HID_KEY_7:
-            hid_keycodes[i] = HID_KEY_F7;
-            break;
-        case HID_KEY_8:
-            hid_keycodes[i] = HID_KEY_F8;
-            break;
-        case HID_KEY_9:
-            hid_keycodes[i] = HID_KEY_F9;
-            break;
-        case HID_KEY_0:
-            hid_keycodes[i] = HID_KEY_F10;
-            break;
-        case HID_KEY_MINUS:
-            hid_keycodes[i] = HID_KEY_F11;
-            break;
-        case HID_KEY_EQUAL:
-            hid_keycodes[i] = HID_KEY_F12;
-            break;
-        case HID_KEY_INSERT:
-            hid_keycodes[i] = HID_KEY_PRINT_SCREEN;
-            break;
-        default:
-            break;
-        }
-    }
-}
-#endif
-
-int key_parse(uint8_t *key_map, uint8_t num, uint8_t key8[8], uint8_t key16[16])
+int key_parse(uint8_t *raw_key_codes, uint8_t num, uint8_t hid_key8[8], uint8_t hid_key16[16])
 {
     uint8_t current_key[120] = {0};
     static uint8_t last_key_8[8] = {0};
     static uint8_t last_key_16[16] = {0};
     uint8_t key8_num = 0, key16_num = 0;
 
-    keymap_to_keybuf8(key_map, current_key, num);
-    ModifierKeyHandler(current_key, key8, num);
-    FnHidKeyHandler(current_key, num);
+    raw_to_hid_keycode(raw_key_codes, current_key, num);
+
+    // Set key_fn_flag to true when fn is pressed. Set key_fn_flag to false when all keys are released.
+    // This is to handle the case where user release the Fn key first, then the other key later. (Assume user's intent is to release all keys)
+    if(is_fn_pressed(current_key, num))
+        key_fn_flag = true;
+    if(num==0)
+        key_fn_flag = false;
+
+    FnKeyHandler(current_key, num);
+#ifdef ENABLE_NUMLOCK
+    NumlockKeyHandler(current_key, num);
+#endif
+    ModifierKeyHandler(current_key, hid_key8, num);
 
     uint8_t remain_num = CompactIntegers(current_key, num);
+
 
     /* 对比上次传输的键值，若此次仍存在，则使用上次的传输方式 */
     for(int key_idx = 0; key_idx < remain_num; key_idx++) {
         for(int key_8_idx = 2; key_8_idx < 8; key_8_idx++) {
             if(current_key[key_idx] && 
                     (last_key_8[key_8_idx] == current_key[key_idx])) {
-                key8[key8_num + 2] = current_key[key_idx];
+                hid_key8[key8_num + 2] = current_key[key_idx];
                 current_key[key_idx] = 0;
                 key8_num++;
             }
@@ -257,7 +222,7 @@ int key_parse(uint8_t *key_map, uint8_t num, uint8_t key8[8], uint8_t key16[16])
             struct key16_type key16_temp = key8_to_key16(current_key[key_idx]);
             if(current_key[key_idx] && 
                     (last_key_16[key16_temp.index] & key16_temp.val)) {
-                key16[key16_temp.index] |= key16_temp.val;
+                hid_key16[key16_temp.index] |= key16_temp.val;
                 current_key[key_idx] = 0;
                 key16_num++;
             }
@@ -271,7 +236,7 @@ int key_parse(uint8_t *key_map, uint8_t num, uint8_t key8[8], uint8_t key16[16])
         if(j > remain_num - 1)
             break;
 
-        key8[i] = current_key[j];
+        hid_key8[i] = current_key[j];
         current_key[j] = 0;
         key8_num++;
         j++;
@@ -281,15 +246,15 @@ int key_parse(uint8_t *key_map, uint8_t num, uint8_t key8[8], uint8_t key16[16])
 
     for(int i = 0; i < remain_num; i++){
         struct key16_type key16_temp = key8_to_key16(current_key[i]);
-        key16[key16_temp.index] |= key16_temp.val;
+        hid_key16[key16_temp.index] |= key16_temp.val;
         current_key[i] = 0;
         key16_num++;
     }
 
     remain_num = CompactIntegers(current_key, remain_num);
 
-    memcpy(last_key_8, key8, 8);
-    memcpy(last_key_16, key16, 16);
+    memcpy(last_key_8, hid_key8, 8);
+    memcpy(last_key_16, hid_key16, 16);
 
     if(remain_num)
         return -1;

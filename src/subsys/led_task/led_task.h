@@ -71,6 +71,8 @@ void set_led_scr(bool s);
 void set_keyboard_init(bool is_init);
 void set_bluetooth_indicator(BluetoothState state);
 
+bool get_led_num();
+
 #ifdef __cplusplus
 }
 #endif

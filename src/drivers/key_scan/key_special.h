@@ -24,7 +24,7 @@ extern "C" {
  */
 bool special_key_handler(uint8_t *keys_8, bool is_long);
 
-void handle_first_layer_special_key(uint8_t *keys_8, bool is_long);
+//void handle_first_layer_special_key(uint8_t *keys_8, bool is_long);
 
 #ifdef __cplusplus
 }

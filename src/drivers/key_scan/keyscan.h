@@ -38,7 +38,6 @@ typedef enum{
 }KEYBOARD_BOOT_STATE;
 
 void key_loop(void); // executed every 10ms
-int readKeyVal(void);
 void RstAllPins(void);
 void SetAllPins(void);
 

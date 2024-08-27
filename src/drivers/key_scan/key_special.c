@@ -20,79 +20,12 @@
 #include "key_parse.h"
 #include "sys/util.h"
 #include "key_codes.h"
-
-enum special_key_flag {
-    SPECIAL_KEY_VOL_DEC,
-    SPECIAL_KEY_VOL_INC,
-    SPECIAL_KEY_BRIGHTNESS_DEC,
-    SPECIAL_KEY_BRIGHTNESS_INC,
-    SPECIAL_KEY_PLAY,
-    SPECIAL_KEY_PREVIOUS,
-    SPECIAL_KEY_NEXT,
-    SPECIAL_KEY_HOME,
-    SPECIAL_KEY_BACK,
-    SPECIAL_KEY_MODE_USB,
-    SPECIAL_KEY_BLE_CHAN_1,
-    SPECIAL_KEY_BLE_CHAN_2,
-    SPECIAL_KEY_BLE_CHAN_3,
-    SPECIAL_KEY_BLE_CHAN_4,
-
-    SPECIAL_KEY_NUM,
-};
+#include "key_table.h"
 
 struct speical_data {
     bool key_state;     // 1: press ; 0: release
     bool long_key_flag;
 };
-
-struct special_handler {
-	uint8_t flag;
-	void (*handler)(struct speical_data *data);
-};
-
-#define SPECIAL_HANDLER(_flag, _handler) \
-{ \
-	.flag = _flag, \
-	.handler = _handler, \
-}
-
-
-uint8_t key_spe_taskid = 0;
-
-#ifdef KEYBOARD_TYPE_G750
-static const uint8_t special_key_map[SPECIAL_KEY_NUM] = {
-        HID_KEY_P,  // SPECIAL_KEY_VOL_DEC,
-        HID_KEY_SEMICOLON,  // SPECIAL_KEY_VOL_INC,
-        HID_KEY_COMMA,  // SPECIAL_KEY_BRIGHTNESS_DEC,
-        HID_KEY_PERIOD,  // SPECIAL_KEY_BRIGHTNESS_INC,
-        HID_KEY_GUI_RIGHT,  // SPECIAL_KEY_HOME, not present in keyboard, just a placeholder
-        HID_KEY_WWW_HOME,  // SPECIAL_KEY_BACK,
-        HID_KEY_M,  // SPECIAL_KEY_MODE_USB
-        HID_KEY_J,  // SPECIAL_KEY_BLE_CHAN_1,
-        HID_KEY_K,  // SPECIAL_KEY_BLE_CHAN_2,
-        HID_KEY_L,  // SPECIAL_KEY_BLE_CHAN_3,
-        HID_KEY_U,  // SPECIAL_KEY_BLE_CHAN_4,
-};
-#endif
-
-#ifdef KEYBOARD_TYPE_PPK
-static const uint8_t special_key_map[SPECIAL_KEY_NUM] = {
-        HID_KEY_ARROW_DOWN,  // SPECIAL_KEY_VOL_DEC,
-        HID_KEY_ARROW_UP,  // SPECIAL_KEY_VOL_INC,
-        HID_KEY_ARROW_LEFT,  // SPECIAL_KEY_BRIGHTNESS_DEC,
-        HID_KEY_ARROW_RIGHT,  // SPECIAL_KEY_BRIGHTNESS_INC,
-        HID_KEY_SPACE,  // SPECIAL_KEY_PLAY,
-        HID_KEY_COMMA,  // SPECIAL_KEY_PREVIOUS,
-        HID_KEY_PERIOD,  // SPECIAL_KEY_NEXT,
-        HID_KEY_WWW_HOME,  // SPECIAL_KEY_HOME,
-        HID_KEY_BACKSPACE,  // SPECIAL_KEY_BACK
-        HID_KEY_U,  // SPECIAL_KEY_MODE_USB
-        HID_KEY_A,  // SPECIAL_KEY_BLE_CHAN_1,
-        HID_KEY_S,  // SPECIAL_KEY_BLE_CHAN_2,
-        HID_KEY_D,  // SPECIAL_KEY_BLE_CHAN_3,
-        HID_KEY_F,  // SPECIAL_KEY_BLE_CHAN_4,
-};
-#endif
 
 /*
 static void mode_rf24(struct speical_data *data)
@@ -107,22 +40,6 @@ static void mode_rf24(struct speical_data *data)
     }
 
     device_mode = MODE_RF24;
-    SaveDeviceInfo("device_mode");
-
-    mode_select(device_mode);
-}
-static void mode_ble(struct speical_data *data)
-{
-    if (data->key_state) {
-        return ;
-    }
-
-    if (device_mode == MODE_BLE)
-    {
-        return ;
-    }
-
-    device_mode = MODE_BLE;
     SaveDeviceInfo("device_mode");
 
     mode_select(device_mode);
@@ -167,7 +84,7 @@ void send_consumer_key(struct speical_data *data, uint16_t usage_id)
         return ;
     }
 
-    PRINT("%s: %s\n", __FUNCTION__, data->key_state ? "pressed" : "released");
+    PRINT("Consumer %u: %s\n", usage_id, data->key_state ? "pressed" : "released");
 
     if (data->key_state) {
         buf[0] = LO_UINT16(usage_id);
@@ -180,86 +97,6 @@ void send_consumer_key(struct speical_data *data, uint16_t usage_id)
     }
 }
 
-static void vol_dec(struct speical_data *data){
-    send_consumer_key(data, HID_USAGE_CONSUMER_VOLUME_DEC);
-}
-
-static void vol_inc(struct speical_data *data){
-    send_consumer_key(data, HID_USAGE_CONSUMER_VOLUME_INC);
-}
-
-static void brightness_dec(struct speical_data *data){
-    send_consumer_key(data, HID_USAGE_CONSUMER_BRIGHTNESS_DEC);
-}
-
-static void brightness_inc(struct speical_data *data){
-    send_consumer_key(data, HID_USAGE_CONSUMER_BRIGHTNESS_INC);
-}
-
-static void www_back(struct speical_data *data){
-    send_consumer_key(data, HID_USAGE_CONSUMER_WWW_BACK);
-}
-
-static void www_play(struct speical_data *data){
-    send_consumer_key(data, HID_USAGE_CONSUMER_PLAYPAUSE);
-}
-
-static void www_previous(struct speical_data *data){
-    send_consumer_key(data, HID_USAGE_CONSUMER_SCAN_PREVIOUS_TRACK);
-}
-
-static void www_next(struct speical_data *data){
-    send_consumer_key(data, HID_USAGE_CONSUMER_SCAN_NEXT_TRACK);
-}
-
-static void www_home(struct speical_data *data){
-    send_consumer_key(data, HID_USAGE_CONSUMER_WWW_HOME);
-}
-
-/*
-static void led_enh(struct speical_data *data)
-{
-    if (!data->key_state) {
-        return ;        
-    }
-
-    PRINT("%s\n", __FUNCTION__);
-
-    if (enhance_bk(BK_LINEALL)) {
-        SaveDeviceInfo("device_led");
-    }   
-}
-
-static void led_weak(struct speical_data *data)
-{
-    if (!data->key_state) {
-        return ;        
-    }
-    PRINT("%s\n", __FUNCTION__);
-
-    if (weaken_bk(BK_LINEALL)) {
-            SaveDeviceInfo("device_led");
-    }
-}
-
-static void led_swit(struct speical_data *data)
-{
-    if (!data->key_state) {
-        return ;        
-    }
-    PRINT("%s\n", __FUNCTION__);
-
-    if (device_led.led_en) {
-        device_led.led_en = false;
-        disbale_bk(BK_LINEALL);
-        SaveDeviceInfo("device_led");
-    } else {
-        device_led.led_en = true;
-        set_bk(BK_LINEALL, device_led.led_level);
-        SaveDeviceInfo("device_led");
-    }  
-}
-*/
 void switch_ble_channel(struct speical_data *data, uint8_t channel)
 {
     bool needs_mode_change = false;
@@ -309,87 +146,97 @@ void switch_ble_channel(struct speical_data *data, uint8_t channel)
     if(needs_mode_change) mode_select(MODE_BLE);
 }
 
-static void ble_chan_1(struct speical_data *data){
-    switch_ble_channel(data, 1);
-}
-static void ble_chan_2(struct speical_data *data){
-    switch_ble_channel(data, 2);
-}
-
-static void ble_chan_3(struct speical_data *data){
-    switch_ble_channel(data, 3);
-}
-
-static void ble_chan_4(struct speical_data *data){
-    switch_ble_channel(data, 4);
-}
-
-static const struct special_handler handler[] = {
-    SPECIAL_HANDLER(SPECIAL_KEY_VOL_DEC, vol_dec),
-    SPECIAL_HANDLER(SPECIAL_KEY_VOL_INC, vol_inc),
-    SPECIAL_HANDLER(SPECIAL_KEY_BRIGHTNESS_DEC, brightness_dec),
-    SPECIAL_HANDLER(SPECIAL_KEY_BRIGHTNESS_INC, brightness_inc),
-    SPECIAL_HANDLER(SPECIAL_KEY_PLAY, www_play),
-    SPECIAL_HANDLER(SPECIAL_KEY_PREVIOUS, www_previous),
-    SPECIAL_HANDLER(SPECIAL_KEY_NEXT, www_next),
-    SPECIAL_HANDLER(SPECIAL_KEY_HOME, www_home),
-    SPECIAL_HANDLER(SPECIAL_KEY_BACK, www_back),
-    SPECIAL_HANDLER(SPECIAL_KEY_MODE_USB, mode_usb),
-    SPECIAL_HANDLER(SPECIAL_KEY_BLE_CHAN_1, ble_chan_1),
-    SPECIAL_HANDLER(SPECIAL_KEY_BLE_CHAN_2, ble_chan_2),
-    SPECIAL_HANDLER(SPECIAL_KEY_BLE_CHAN_3, ble_chan_3),
-    SPECIAL_HANDLER(SPECIAL_KEY_BLE_CHAN_4, ble_chan_4),
-};
-
-
-static inline uint8_t is_speical_key(uint8_t *keys_8, uint8_t *key_list_special)
+bool special_key_handler(uint8_t *keys_8, bool is_long)
 {
-    uint8_t idx = 0;
-    uint8_t key_idx = 0;
+    bool have_specia_key = false;
+    uint32_t spk_flag_curr= 0;
+    static uint32_t spk_flag_before = 0;
+    struct speical_data data = {0};
+    static uint8_t saved_flag = 0xff;
 
-    uint8_t num = 0;
-    /* is fn pressed */
-    if (key_fn_flag) {
-        //key_fn_flag = 0;
-
-#ifdef KEYBOARD_TYPE_PPK
-        // For PPK, Fn+LEFTGUI=WWW_HOME, so we need to extract the LEFTGUI status from the first byte.
-        if (keys_8[0] & KEYBOARD_MODIFIER_LEFTGUI) {
-            key_list_special[num++] = SPECIAL_KEY_HOME;
-            keys_8[0] &= (~KEYBOARD_MODIFIER_LEFTGUI);
-        }
-#endif
-        for (key_idx = 2; key_idx < 8; key_idx++) {
-            // 键值为0 则后面无更多键值
-            if (!keys_8[key_idx]) {
-                break;
-            }
-
-            for (idx = 0; idx < SPECIAL_KEY_NUM; idx++) {
-                if (keys_8[key_idx] == special_key_map[idx]) {
-                    key_list_special[num++] = idx;
-                    keys_8[key_idx] = 0;
+    for (int i = 1; i < 8; i++) {
+        bool is_speical_key = keys_8[i] > HID_KEY_SPECIAL_START_INDEX;
+        if (!is_speical_key) continue;
+        have_specia_key = true;
+        spk_flag_curr |=  BIT(keys_8[i]-HID_KEY_SPECIAL_START_INDEX-1);
+        keys_8[i] = 0;
+    }
+    if (spk_flag_curr) {
+        for (int i = 0 ; i < HID_KEY_MODE_USB-HID_KEY_SPECIAL_START_INDEX-1; i++) {
+            uint8_t hid_key = i+HID_KEY_SPECIAL_START_INDEX+1;
+            // 0 -> 1
+            if (spk_flag_curr & BIT(i)) {
+                if (!(spk_flag_before & BIT(i))) {
+                    // 避免长按导致键值再次触发
+                    if (!is_long) {
+                        saved_flag = i;
+                        data.key_state = true;
+                        send_consumer_key(&data, consumer_key_table[i]);
+                    }
+                }
+            } else {
+                // 1 -> 0
+                if (spk_flag_before & BIT(i)) {
+                    saved_flag = i;
+                    data.key_state = false;
+                    send_consumer_key(&data, consumer_key_table[i]);
                 }
             }
         }
+        spk_flag_before = spk_flag_curr;
+        for (int i = HID_KEY_MODE_USB-HID_KEY_SPECIAL_START_INDEX-1 ; i < HID_KEY_FN-HID_KEY_SPECIAL_START_INDEX-1; i++) {
+            uint8_t hid_key = i+HID_KEY_SPECIAL_START_INDEX+1;
+            if (spk_flag_curr & BIT(i)) {
+                data.long_key_flag = is_long;
+                switch (hid_key){
+                case HID_KEY_MODE_USB:
+                    mode_usb(&data);
+                    break;
+                case HID_KEY_MODE_BLE_CHAN_1:
+                    switch_ble_channel(&data, 1);
+                    break;
+                case HID_KEY_MODE_BLE_CHAN_2:
+                    switch_ble_channel(&data, 2);
+                    break;
+                case HID_KEY_MODE_BLE_CHAN_3:
+                    switch_ble_channel(&data, 3);
+                    break;
+                case HID_KEY_MODE_BLE_CHAN_4:
+                    switch_ble_channel(&data, 4);
+                    break;
+                default:
+                    break;
+                }
+                // 清除标志防止切换后再次触发
+                saved_flag = 0xff;
 
-        return num;
+                // 模式切换后，键值无需上传
+                return false;
+            }
+        }
+    } else {
+        spk_flag_before = 0;
+
+        // Release the special keys if none is pressed
+        if (saved_flag < HID_KEY_MODE_USB-HID_KEY_SPECIAL_START_INDEX-1) {
+            data.key_state = false;
+            data.long_key_flag = is_long;
+            send_consumer_key(&data, consumer_key_table[saved_flag]);
+            saved_flag = 0xff;
+        }
 
     }
 
-    return 0;
-}
+    // Get rid of 0s in the middle
+    CompactIntegers(keys_8+2,6);
 
-bool special_key_handler(uint8_t *keys_8, bool is_long)
-{
-    uint8_t spk_num = 0;
+    return true;
+/*    uint8_t spk_num = 0;
     uint8_t spk_buffer[6] = {0};
 
     static uint8_t saved_flag = 0xff;
     struct speical_data data = {0};
 
-    uint32_t spk_flag_curr= 0;
-    static uint32_t spk_flag_before = 0;
 
     spk_num = is_speical_key(keys_8, spk_buffer);
 
@@ -452,33 +299,7 @@ bool special_key_handler(uint8_t *keys_8, bool is_long)
     // Get rid of 0s in the middle
     CompactIntegers(keys_8+2,6);
 
-    return true;
-}
-
-void handle_first_layer_special_key(uint8_t *keys_8, bool is_long){
-    bool special_key_pressed = false;
-    static bool special_key_previously_pressed = false;
-    for(int i = 2; i < 8; i++) {
-        if (keys_8[i]==HID_KEY_WWW_HOME) {
-            struct speical_data data = {0};
-            data.key_state = true;
-            data.long_key_flag = is_long;
-            send_consumer_key(&data, HID_USAGE_CONSUMER_WWW_HOME);
-            keys_8[i]=0;
-            special_key_pressed = true;
-            special_key_previously_pressed = true;
-        }
-    }
-    // Release the special keys if none is pressed
-    if(!special_key_pressed && special_key_previously_pressed){
-        struct speical_data data = {0};
-        data.key_state = false;
-        data.long_key_flag = is_long;
-        send_consumer_key(&data, HID_USAGE_CONSUMER_WWW_HOME);
-        special_key_previously_pressed = false;
-    }
-    // Get rid of 0s in the middle
-    CompactIntegers(keys_8+2,6);
+    return true;*/
 }
 
 
