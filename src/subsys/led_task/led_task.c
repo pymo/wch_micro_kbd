@@ -14,11 +14,14 @@
 uint8_t led_taskid = 0;
 
 // High level system states that LED needs to represent
-static bool led_numlock_on = false;
-static bool led_capslock_on = false;
-static bool led_scrolllock_on = false;  // scroll lock LED is not implemented
-static bool is_keyboard_init = false;
-static BluetoothState bluetooth_state = BLULETOOTH_OFF;
+bool led_numlock_on = false;
+bool led_capslock_on = false;
+bool led_scrolllock_on = false;  // scroll lock LED is not implemented
+bool is_keyboard_init = false;
+BluetoothState bluetooth_state = BLULETOOTH_OFF;
+
+uint32 last_bluetooth_indicator_set_ms = 0;
+bool pm_is_in_idle_last_time = false;
 
 void led_on(uint32_t pin){
     GPIOB_SetBits(pin);
@@ -69,14 +72,18 @@ bool led_mode_to_state(LedMode led_mode){
 }
 
 void update_led_state(){
-    LedMode led_yellow_mode = LED_OFF;
+    LedMode led_red_mode = LED_OFF;
     LedMode led_green_mode = LED_OFF;
     LedMode led_blue_mode = LED_OFF;
 
     // Don't turn on LEDs during sleep.
     if (!pm_is_in_idle()){
+        // We just woke up from sleep, turn on the Blue LED indicator.
+        if (pm_is_in_idle_last_time){
+            last_bluetooth_indicator_set_ms = TMOS_GetSystemClock() * SYSTEM_TIME_MICROSEN  / 1000;
+        }
         if (is_keyboard_init){
-            led_yellow_mode = LED_CONSTANT_ON;
+            led_red_mode = LED_CONSTANT_ON;
             led_green_mode = LED_CONSTANT_ON;
             led_blue_mode = LED_CONSTANT_ON;
         } else {
@@ -84,37 +91,42 @@ void update_led_state(){
 
             uint8_t percentage = GetBatteryPercentage();
 #ifdef ENABLE_NUMLOCK
-            if (led_numlock_on) led_yellow_mode = LED_CONSTANT_ON; else
+            if (led_numlock_on) led_red_mode = LED_CONSTANT_ON; else
 #endif
-            if (percentage<10) led_yellow_mode = LED_BLINK_3;
-            else if (percentage<15) led_yellow_mode = LED_BLINK_2;
-            else if (percentage<20) led_yellow_mode = LED_BLINK_1;
+            if (percentage<10) led_red_mode = LED_BLINK_3;
+            else if (percentage<15) led_red_mode = LED_BLINK_2;
+            else if (percentage<20) led_red_mode = LED_BLINK_1;
 
+            // Handles Blue LED
+            uint32 current_ms = TMOS_GetSystemClock() * SYSTEM_TIME_MICROSEN  / 1000;
+            uint32 ms_since_last_set_bluetooth_indicator = current_ms - last_bluetooth_indicator_set_ms;
             if (device_mode == MODE_USB || bluetooth_state == BLULETOOTH_OFF)
                 led_blue_mode = LED_OFF;
             else if (bluetooth_state == BLULETOOTH_RECONNECTING)
                 led_blue_mode = LED_FLASH;
             else if (bluetooth_state == BLULETOOTH_PAIRING){
                 led_blue_mode = LED_ALT_FLASH_1;
-                led_yellow_mode = LED_ALT_FLASH_2;
+                led_red_mode = LED_ALT_FLASH_2;
             }
-            else if (bluetooth_state == BLULETOOTH_CONNECTED_1)
+            else if (bluetooth_state == BLULETOOTH_CONNECTED_1 && ms_since_last_set_bluetooth_indicator < BLUE_BLINK_OFF_THRESHOLD_MS)
                 led_blue_mode = LED_BLINK_1;
-            else if (bluetooth_state == BLULETOOTH_CONNECTED_2)
+            else if (bluetooth_state == BLULETOOTH_CONNECTED_2 && ms_since_last_set_bluetooth_indicator < BLUE_BLINK_OFF_THRESHOLD_MS)
                 led_blue_mode = LED_BLINK_2;
-            else if (bluetooth_state == BLULETOOTH_CONNECTED_3)
+            else if (bluetooth_state == BLULETOOTH_CONNECTED_3 && ms_since_last_set_bluetooth_indicator < BLUE_BLINK_OFF_THRESHOLD_MS)
                 led_blue_mode = LED_BLINK_3;
-            else if (bluetooth_state == BLULETOOTH_CONNECTED_4)
+            else if (bluetooth_state == BLULETOOTH_CONNECTED_4 && ms_since_last_set_bluetooth_indicator < BLUE_BLINK_OFF_THRESHOLD_MS)
                 led_blue_mode = LED_BLINK_4;
         }
     }
     // Sets the value of LED
-    if(led_mode_to_state(led_yellow_mode)) led_on(LED_YELLOW);
-    else led_off(LED_YELLOW);
+    if(led_mode_to_state(led_red_mode)) led_on(LED_RED);
+    else led_off(LED_RED);
     if(led_mode_to_state(led_green_mode)) led_on(LED_GREEN);
     else led_off(LED_GREEN);
     if(led_mode_to_state(led_blue_mode)) led_on(LED_BLUE);
     else led_off(LED_BLUE);
+
+    pm_is_in_idle_last_time = pm_is_in_idle();
 }
 
 uint16_t led_task_event(uint8_t task_id, uint16_t event)
@@ -132,10 +144,10 @@ uint16_t led_task_event(uint8_t task_id, uint16_t event)
 void led_task_init(void)
 {
     //¼üÅÌ×´Ì¬µÆÅäÖÃ
-    led_off(LED_YELLOW);
+    led_off(LED_RED);
     led_off(LED_GREEN);
     led_off(LED_BLUE);
-    GPIOB_ModeCfg(LED_YELLOW, GPIO_ModeOut_PP_5mA);
+    GPIOB_ModeCfg(LED_RED, GPIO_ModeOut_PP_5mA);
     GPIOB_ModeCfg(LED_GREEN, GPIO_ModeOut_PP_5mA);
     GPIOB_ModeCfg(LED_BLUE, GPIO_ModeOut_PP_5mA);
 
@@ -165,5 +177,6 @@ void set_keyboard_init(bool is_init){
 }
 
 void set_bluetooth_indicator(BluetoothState state){
+    uint32 last_bluetooth_indicator_set_ms = TMOS_GetSystemClock() * SYSTEM_TIME_MICROSEN  / 1000;
     bluetooth_state = state;
 }

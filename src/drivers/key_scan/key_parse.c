@@ -193,12 +193,13 @@ int key_parse(uint8_t *raw_key_codes, uint8_t num, uint8_t hid_key8[8], uint8_t 
 
     raw_to_hid_keycode(raw_key_codes, current_key, num);
 
-    // Set key_fn_flag to true when fn is pressed. Set key_fn_flag to false when all keys are released.
+    /* Set key_fn_flag to true when fn is pressed. Set key_fn_flag to false when all keys are released.
     // This is to handle the case where user release the Fn key first, then the other key later. (Assume user's intent is to release all keys)
     if(is_fn_pressed(current_key, num))
         key_fn_flag = true;
     if(num==0)
-        key_fn_flag = false;
+        key_fn_flag = false;*/
+    key_fn_flag = is_fn_pressed(current_key, num);
 
     FnKeyHandler(current_key, num);
 #ifdef ENABLE_NUMLOCK

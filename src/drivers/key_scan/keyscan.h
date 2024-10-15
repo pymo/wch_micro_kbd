@@ -10,9 +10,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define DCD_PIN                     (GPIO_Pin_11)  // GPIOA
-#define RTS_PIN                     (GPIO_Pin_12)  // GPIOA
-#define VCC_PIN                     (GPIO_Pin_15)  // GPIOB
+#define DCD_PIN                     (GPIO_Pin_14)  // GPIOB
+#define RTS_PIN                     (GPIO_Pin_15)  // GPIOB
+#define VCC_PIN                     (GPIO_Pin_14)  // GPIOA
 #define KEEPALIVE_TIMEOUT_MS        500000
 #define LONGKEY_TIME                1000
 #define INIT_FAILURE_TIMEOUT_MS     (3000) //3s

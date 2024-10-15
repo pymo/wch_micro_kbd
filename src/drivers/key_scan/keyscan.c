@@ -23,7 +23,7 @@ bool is_first_boot = true;
 
 __HIGH_CODE
 void RstAllPins(void) {
-    GPIOB_ResetBits(LED_YELLOW|LED_GREEN|LED_BLUE);      // Turn off LED
+    GPIOB_ResetBits(LED_RED|LED_GREEN|LED_BLUE);      // Turn off LED
 }
 
 __HIGH_CODE
@@ -234,9 +234,6 @@ void ScanKeyG750() {
             if (key_up) keyRelease(current_key_map, &key_num, raw_keycode);
             else keyPress(current_key_map, &key_num, raw_keycode);
             int ret = ScanKeyAndGenerateReport(current_key_map, key_num);
-            //if (ret < 0) {
-            //    PRINT("read key error\n");
-            //}
             i++;
         }
     }
@@ -335,15 +332,15 @@ void key_loop() {
 #ifdef KEYBOARD_TYPE_PPK
         UART0_BaudRateCfg(9600);
 #endif
-        GPIOA_ModeCfg(RTS_PIN | DCD_PIN, GPIO_ModeIN_Floating);
-        GPIOB_SetBits(VCC_PIN);
-        GPIOB_ModeCfg(VCC_PIN, GPIO_ModeOut_PP_5mA); // VCC_CTL配置推挽输出，注意先让IO口输出高电平
+        GPIOB_ModeCfg(RTS_PIN | DCD_PIN, GPIO_ModeIN_Floating);
+        GPIOA_SetBits(VCC_PIN);
+        GPIOA_ModeCfg(VCC_PIN, GPIO_ModeOut_PP_20mA); // VCC_CTL配置推挽输出，注意先让IO口输出高电平
         k_state = K_STATE_1_OFF;
         break;
     case K_STATE_1_OFF:
         if (ms_current > ms_last_state_change + (is_first_boot)?KEYBOARD_REBOOT_DELAY_MS_LONG:KEYBOARD_REBOOT_DELAY_MS_SHORT) {
             ms_last_state_change = ms_current;
-            GPIOB_ResetBits(VCC_PIN);
+            GPIOA_ResetBits(VCC_PIN);
 #if defined(PPK_TYPE_HANDSPRING) || defined(KEYBOARD_TYPE_G750)
             // TODO(): This should be K_STATE_5_RTS_HIGH, but the hardware circuit has some issues when directly connecting RXD0, should change back to K_STATE_5_RTS_HIGH once we have 0ohm disconnect in the circuit.
             k_state = K_STATE_6_ID_RECEIVED;
@@ -356,15 +353,15 @@ void key_loop() {
     case K_STATE_2_ON:
         // Wait for 10us, see https://github.com/pymo/ppk_bluetooth/issues/4
         if ((ms_current > ms_last_state_change + 10)
-                && GPIOA_ReadPortPin(DCD_PIN)) {
+                && GPIOB_ReadPortPin(DCD_PIN)) {
             PRINT("DCD_PIN response done.\n");
             ms_last_state_change = ms_current;
-            if (GPIOA_ReadPortPin(RTS_PIN)) { // RTS high, needs to lower it first
-                GPIOA_ResetBits(RTS_PIN);
-                GPIOA_ModeCfg(RTS_PIN, GPIO_ModeOut_PP_5mA);
+            if (GPIOB_ReadPortPin(RTS_PIN)) { // RTS high, needs to lower it first
+                GPIOB_ResetBits(RTS_PIN);
+                GPIOB_ModeCfg(RTS_PIN, GPIO_ModeOut_PP_5mA);
                 k_state = K_STATE_3_DCD_RESPONDED;
             } else {
-                GPIOA_ModeCfg(RTS_PIN, GPIO_ModeOut_PP_5mA);
+                GPIOB_ModeCfg(RTS_PIN, GPIO_ModeOut_PP_5mA);
                 k_state = K_STATE_4_RTS_LOW;
             }
         }
@@ -377,7 +374,7 @@ void key_loop() {
         break;
     case K_STATE_4_RTS_LOW:
         if (ms_current > ms_last_state_change + 10) {
-            GPIOA_SetBits(RTS_PIN);
+            GPIOB_SetBits(RTS_PIN);
             PRINT("waiting for keyboard serial ID... \n");
             ms_last_state_change = ms_current;
             k_state = K_STATE_5_RTS_HIGH;
@@ -392,13 +389,14 @@ void key_loop() {
         }
         uint8_t len = UART0_RecvString(keyboard_id_buff + keyboard_id_buff_len);
         for (int i = 0; i < len; i++) {
-            PRINT("byte from keyboard: %#x\n ",
+            PRINT("byte from keyboard: %#x\n",
                     keyboard_id_buff[keyboard_id_buff_len + i]);
         }
 
         keyboard_id_buff_len += len;
             // Checks keyboard ID
             if (ContainsKeyboardId(keyboard_id_buff, keyboard_id_buff_len)){
+                PRINT("Keyboard init complete.\n");
                 is_first_boot = false;
                 last_pressed = ms_current;
                 ms_last_state_change = ms_current;

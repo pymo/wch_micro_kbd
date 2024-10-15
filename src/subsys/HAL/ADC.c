@@ -36,12 +36,12 @@ const uint32_t bat_percent_lookup[] = {
         3584, 3617, 3652, 3693, 3729, 3767,
         3817, 3861, 3947 };
  */
-  // 551430 battery
- const uint32_t bat_percent_lookup[] = {
-        2566, 3254, 3345, 3383, 3432, 3475,
-        3501, 3539, 3581, 3609, 3621, 3631,
-        3652, 3682, 3714, 3748, 3785, 3824,
-        3872, 3929, 3990 };
+// 601230 battery
+const uint32_t bat_percent_lookup[] = {
+  2426, 3228, 3334, 3372, 3410, 3441,
+  3466, 3486, 3506, 3530, 3561, 3605,
+  3657, 3702, 3732, 3752, 3794, 3841,
+  3870, 3932, 4054 };
 
 #define BAT_SAMPLE_WINDOW_SIZE 5
 
@@ -94,22 +94,22 @@ uint8_t AdcToBatteryPercentage(uint32_t adc_value) {
 
 void ADCBatterySample() {
     ADC_ExtSingleChSampInit(SampleFreq_3_2, ADC_PGA_0);
-    ADC_ChannelCfg(5);
+    ADC_ChannelCfg(BATTERY_PIN_CHANNEL);
     uint32_t adcsum = 0;
-    GPIOA_ModeCfg(GPIO_Pin_15, GPIO_ModeIN_Floating);
+    GPIOA_ModeCfg(BATTERY_PIN, GPIO_ModeIN_Floating);
     signed short RoughCalib_Value = ADC_DataCalib_Rough(); // 用于计算ADC内部偏差，记录到全局变量 RoughCalib_Value中
     for (uint8_t i = 0; i < 20; i++) {
         adcsum += ADC_ExcutSingleConver() + RoughCalib_Value;      // 连续采样20次
     }
-    GPIOA_ModeCfg(GPIO_Pin_15, GPIO_ModeIN_PU);
+    GPIOA_ModeCfg(BATTERY_PIN, GPIO_ModeIN_PU);
     uint32_t adcavg = adcsum / 20;
     uint32_t voltage_mv = adcavg * 1000 * 2 * 1.05 / 2048;
     PRINT("adc sample: %d, offset: %d voltage: %d\n", adcavg, RoughCalib_Value,
             voltage_mv);
     battery_percentage = AdcToBatteryPercentage(adcavg);
     // Checks if it's charging
-    GPIOA_ModeCfg(GPIO_Pin_13, GPIO_ModeIN_Floating);
-    bool current_charging = GPIOA_ReadPortPin(GPIO_Pin_13);
+    GPIOA_ModeCfg(USB_PIN, GPIO_ModeIN_Floating);
+    bool current_charging = GPIOA_ReadPortPin(USB_PIN);
     if(is_charging != current_charging){
         is_charging = current_charging;
         PRINT("Charging state: %s\n", is_charging?"true, sleep disabled":"false, sleep enabled");

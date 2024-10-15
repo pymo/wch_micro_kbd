@@ -53,6 +53,7 @@ void Main_Circulation() {
 int main(void)
 {
     init_fn_key_table();
+    //HSECFG_Capacitance(HSECap_12p);
     PowerMonitor(ENABLE, LPLevel_2V5);
     PFIC_EnableIRQ(WDOG_BAT_IRQn);
 #if (defined (DCDC_ENABLE)) && (DCDC_ENABLE == TRUE)
