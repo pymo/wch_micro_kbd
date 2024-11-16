@@ -13,7 +13,11 @@ Open it to install, the setting instructions are as follows:
 
 2. Use a USB type-C cable to connect the keyboard module to the PC.
 
-3. Press and hold the reset button with a needle/paper clip, then insert the module into the keyboard (which is to turn the module on), then release the reset button.
+3. Use the following method to let the CH582 module to enter download mode:
+
+- For Palm Portable Keyboard module: Press and hold the reset button with a needle/paper clip, then insert the module into the keyboard (which is to turn the module on), then release the reset button.
+
+- For G750 module: Press and hold the reset button with a needle/paper clip, then press and release the micro power switch, then release the reset button.
 
 ![Figure 2. Enter Download mode](/doc/images/enter_download_mode.jpg "Figure 2. Enter Download mode")
 

@@ -36,6 +36,13 @@ void SetAllPins(void) {/*
 
 }
 
+#if PCB_REV >= 3
+#define TurnOffVcc(pin) GPIOA_ResetBits(pin)
+#define TurnOnVcc(pin)  GPIOA_SetBits(pin)
+#else
+#define TurnOffVcc(pin) GPIOA_SetBits(pin)
+#define TurnOnVcc(pin)  GPIOA_ResetBits(pin)
+#endif
 bool ContainsKeyboardId(uint8_t* keyboard_id_buff, uint8_t keyboard_id_buff_len){
     for (uint8_t i = 0; i< keyboard_id_buff_len; ++i){
         if (keyboard_id_buff_len >= 2){
@@ -231,9 +238,17 @@ void ScanKeyG750() {
         uint8_t raw_keycode = keyboard_rx_buff[i]&0b01111111;
         if (raw_keycode^keyboard_rx_buff[i+1]==0b11111111) {
             bool key_up = keyboard_rx_buff[i]&0b10000000;
+#if PRINT_KEYCODE_MODE
+            if (!key_up) {
+                char str_buf[10];
+                sprintf(str_buf, "%#x \0", raw_keycode);
+                PrintStringToHost(current_key_map, &key_num, str_buf, strlen(str_buf));
+            }
+#else
             if (key_up) keyRelease(current_key_map, &key_num, raw_keycode);
             else keyPress(current_key_map, &key_num, raw_keycode);
             int ret = ScanKeyAndGenerateReport(current_key_map, key_num);
+#endif
             i++;
         }
     }
@@ -333,14 +348,14 @@ void key_loop() {
         UART0_BaudRateCfg(9600);
 #endif
         GPIOB_ModeCfg(RTS_PIN | DCD_PIN, GPIO_ModeIN_Floating);
-        GPIOA_SetBits(VCC_PIN);
+        TurnOffVcc(VCC_PIN);
         GPIOA_ModeCfg(VCC_PIN, GPIO_ModeOut_PP_20mA); // VCC_CTL配置推挽输出，注意先让IO口输出高电平
         k_state = K_STATE_1_OFF;
         break;
     case K_STATE_1_OFF:
         if (ms_current > ms_last_state_change + (is_first_boot)?KEYBOARD_REBOOT_DELAY_MS_LONG:KEYBOARD_REBOOT_DELAY_MS_SHORT) {
             ms_last_state_change = ms_current;
-            GPIOA_ResetBits(VCC_PIN);
+            TurnOnVcc(VCC_PIN);
 #if defined(PPK_TYPE_HANDSPRING) || defined(KEYBOARD_TYPE_G750)
             // TODO(): This should be K_STATE_5_RTS_HIGH, but the hardware circuit has some issues when directly connecting RXD0, should change back to K_STATE_5_RTS_HIGH once we have 0ohm disconnect in the circuit.
             k_state = K_STATE_6_ID_RECEIVED;

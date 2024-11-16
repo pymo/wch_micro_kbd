@@ -29,19 +29,21 @@ bool GetChargingState(){
 // This lookup table must have 21 entries. Each entry must be different,
 // otherwise we will have divide-by-zero error below.
 
-/*// 301230 battery
+#ifdef KEYBOARD_TYPE_G750
+// 401225 battery
 const uint32_t bat_percent_lookup[] = {
-        2375, 3164, 3304, 3353, 3376, 3407,
-        3427, 3450, 3473, 3497, 3524, 3551,
-        3584, 3617, 3652, 3693, 3729, 3767,
-        3817, 3861, 3947 };
- */
+  2373, 3276, 3384, 3425, 3477, 3526,
+  3567, 3596, 3609, 3616, 3622, 3638,
+  3661, 3695, 3733, 3774, 3811, 3863,
+  3912, 3962, 4027 };
+#else
 // 601230 battery
 const uint32_t bat_percent_lookup[] = {
   2426, 3228, 3334, 3372, 3410, 3441,
   3466, 3486, 3506, 3530, 3561, 3605,
   3657, 3702, 3732, 3752, 3794, 3841,
   3870, 3932, 4054 };
+#endif
 
 #define BAT_SAMPLE_WINDOW_SIZE 5
 

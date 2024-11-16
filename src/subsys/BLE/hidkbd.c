@@ -35,7 +35,7 @@
  * CONSTANTS
  */
 // Param update delay
-#define START_PARAM_UPDATE_EVT_DELAY          12800
+#define START_PARAM_UPDATE_EVT_DELAY          6400  // 6400/625=10.24s
 
 // Param update delay
 #define START_PHY_UPDATE_DELAY                1600

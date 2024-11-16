@@ -21,7 +21,7 @@ extern "C" {
 #define LED_RED GPIO_Pin_13  // GPIOB
 #define LED_GREEN  GPIO_Pin_23  // GPIOB
 #define LED_BLUE   GPIO_Pin_12  // GPIOB
-#define BLUE_BLINK_OFF_THRESHOLD_MS 60000  // 1 min
+#define BLUE_BLINK_OFF_THRESHOLD_MS 30000  // 30s
 
 typedef enum{
     BLULETOOTH_OFF,
