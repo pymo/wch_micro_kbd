@@ -29,7 +29,7 @@ In MounRiver, go to Project->Properties->C/C++ Build->Settings, on the right sid
 | :-------: | :-----------------------------------------------------------------: | :------: |
 | `KEYBOARD_TYPE_PPK` or `KEYBOARD_TYPE_G750`| N/A | The category of keyboard you want to compile for |
 | `PPK_TYPE_HANDSPRING` or `PPK_TYPE_JORNADA` | N/A | If you are compiling for the Handspring Visor version or Jornada version of the Palm portable keyboard, define this. `KEYBOARD_TYPE_PPK` must also be defined if this is defined. If no `PPK_TYPE_*` is defined, it will compile for all other PPK types. |
-| `PCB_REV` | 1, 2 or 3 | Please check the PCB revision at the upper layer silkscreen of the PCB. silkscreen `CH582F` (revision 1): no DC-DC circuitry on PCB, also some GPIO wirings are different from later revisions; silkscreen `CH582Fv2`: Pull down GPIO A14 to power on the keyboard; silkscreen `CH582Fv3`: Pull up GPIO A14 to power on the keyboard|
+| `PCB_REV` | 1, 2 or 3 | Please check the PCB revision at the upper layer silkscreen of the PCB. (1) silkscreen `CH582F`: no DC-DC circuitry on PCB, also some GPIO wirings are different from later revisions. (2) silkscreen `CH582Fv2`: Pull down GPIO A14 to power on the keyboard. (3) silkscreen `CH582Fv3`: Pull up GPIO A14 to power on the keyboard|
 | `KEYBOARD_LAYOUT_ISO` | N/A | If defined, will compile for the ISO (common in Europe) keyboard layout; if not defined, will compile for ANSI (US) layout.|
 | `ENABLE_NUMLOCK` | N/A | If defined, will support the NumLock feature of the keyboard. Not recommended because numpad keys co-exist with normal keys and it will cause confusion.|
 | `DEBUG` | N/A | If defined, will output serial debug information from TXD1. Don't enable this when compiling for release.|
@@ -39,8 +39,8 @@ In MounRiver, go to Project->Properties->C/C++ Build->Settings, on the right sid
 
 You can change the `key8_table` variable and `init_fn_key_table()` function in `src/drivers/key_scan/key_table.c` to change the mapping, read the code's comment to learn more.
 
-`key8_table`: the mapping for normal keys
-`fn_key_table`: the mapping for fn shortcuts.
+- `key8_table`: the mapping for normal keys
+- `fn_key_table`: the mapping for fn shortcuts.
 
 Compile
 --------------
@@ -49,4 +49,4 @@ Use Project->Build All to build. If no compilation error happens, there will be 
 Download the firmware to the board
 --------------
 
-Please refer to [the download guide](doc/wch_isp_tool.md).
+Please refer to [the download guide](wch_isp_tool.md).
