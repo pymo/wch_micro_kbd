@@ -21,9 +21,8 @@ bool GetChargingState(){
     return is_charging;
 }
 
-// We don't bother converting the raw value to volts. We just measure the raw value across the
-// entire run time, then we can calculate the raw reading at 0%, 5%, ..., 100%
-// battery life. It is a rough estimation anyway.
+// We measure the voltage value across the entire run time, then we
+// select the voltage reading at 0%, 5%, ..., 100% battery life.
 //
 // If you are using a different battery, you may need to change this table.
 // This lookup table must have 21 entries. Each entry must be different,

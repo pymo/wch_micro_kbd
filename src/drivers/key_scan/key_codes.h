@@ -160,11 +160,14 @@
 #define HID_KEY_NEXT 0xF7
 #define HID_KEY_WWW_HOME 0xF8
 #define HID_KEY_WWW_BACK 0xF9
+
+// Keyboard mode and FN key code for convenience.
 #define HID_KEY_MODE_USB 0xFA
 #define HID_KEY_MODE_BLE_CHAN_1 0xFB
 #define HID_KEY_MODE_BLE_CHAN_2 0xFC
 #define HID_KEY_MODE_BLE_CHAN_3 0xFD
 #define HID_KEY_MODE_BLE_CHAN_4 0xFE
-#define HID_KEY_FN                 0xFF
+#define HID_KEY_FN              0xFF
+
 
 #endif /* DRIVERS_KEY_SCAN_KEY_CODES_H_ */

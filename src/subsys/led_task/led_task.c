@@ -100,8 +100,12 @@ void update_led_state(){
             // Handles Blue LED
             uint32 current_ms = TMOS_GetSystemClock() * SYSTEM_TIME_MICROSEN  / 1000;
             uint32 ms_since_last_set_bluetooth_indicator = current_ms - last_bluetooth_indicator_set_ms;
-            if (device_mode == MODE_USB || bluetooth_state == BLULETOOTH_OFF)
-                led_blue_mode = LED_OFF;
+            if (device_mode == MODE_USB){
+                if (ms_since_last_set_bluetooth_indicator < BLUE_BLINK_OFF_THRESHOLD_MS)
+                  led_blue_mode = LED_CONSTANT_ON;
+                else
+                  led_blue_mode = LED_OFF;
+            }
             else if (bluetooth_state == BLULETOOTH_RECONNECTING)
                 led_blue_mode = LED_FLASH;
             else if (bluetooth_state == BLULETOOTH_PAIRING){
@@ -147,9 +151,9 @@ void led_task_init(void)
     led_off(LED_RED);
     led_off(LED_GREEN);
     led_off(LED_BLUE);
-    GPIOB_ModeCfg(LED_RED, GPIO_ModeOut_PP_5mA);
-    GPIOB_ModeCfg(LED_GREEN, GPIO_ModeOut_PP_5mA);
-    GPIOB_ModeCfg(LED_BLUE, GPIO_ModeOut_PP_5mA);
+    GPIOB_ModeCfg(LED_RED, GPIO_ModeOut_PP_20mA);
+    GPIOB_ModeCfg(LED_GREEN, GPIO_ModeOut_PP_20mA);
+    GPIOB_ModeCfg(LED_BLUE, GPIO_ModeOut_PP_20mA);
 
     led_taskid = TMOS_ProcessEventRegister(led_task_event);
     tmos_set_event(led_taskid,LED_UPDATE_EVENT);
