@@ -120,7 +120,7 @@
 #define HID_KEY_KEYPAD_0           0x62
 #define HID_KEY_KEYPAD_DECIMAL     0x63
 #define HID_KEY_EUROPE_2           0x64
-#define HID_KEY_APPLICATION        0x65
+#define HID_KEY_APPLICATION        0x65  // Menu key
 #define HID_KEY_POWER              0x66
 #define HID_KEY_KEYPAD_EQUAL       0x67
 #define HID_KEY_F13                0x68
@@ -147,8 +147,9 @@
 // The following are not in HID spec, but I defined it for convenience.
 
 // a placeholder to indicate the start of custom-defined code. Add new code below it and adjust this value accordingly
-#define HID_KEY_SPECIAL_START_INDEX 0xEE
+#define HID_KEY_SPECIAL_START_INDEX 0xED
 
+#define HID_KEY_FN2              0xEE
 #define HID_KEY_EMAIL 0xEF
 #define HID_KEY_CALCULATOR 0xF0
 #define HID_KEY_VOL_DEC 0xF1

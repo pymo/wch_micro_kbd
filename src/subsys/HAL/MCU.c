@@ -256,16 +256,6 @@ tmosEvents HAL_ProcessEvent( tmosTaskID task_id, tmosEvents events )
   }
 
   if(events & HAL_ADC_EVENT) {
-//#define MIN_BATTERY_VOL         2.5
-//#define ADC_THRESHOLD (MIN_BATTERY_VOL*2048/1.05)  //低于2.5V睡眠
-
-//    if(adcavg < (uint32_t)ADC_THRESHOLD) {
-//        PRINT("battery low...\n");
-//#if( DEBUG == Debug_UART1 )  // 使用其他串口输出打印信息需要修改这行代码
-//      while( ( R8_UART1_LSR & RB_LSR_TX_ALL_EMP ) == 0 )
-//      __nop();
-//#endif
-//    }
     ADCBatterySample();
     tmos_start_task( halTaskID, HAL_ADC_EVENT, MS1_TO_SYSTEM_TIME(ADC_INTERVAL_MS));
     return events ^ HAL_ADC_EVENT;

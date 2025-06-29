@@ -1,4 +1,5 @@
 #include "keyscan.h"
+#include "keyscan_ultrathin.h"
 #include "key_parse.h"
 #include "soc.h"
 #include "RingBuffer/lwrb.h"
@@ -13,9 +14,6 @@
 #include "key_special.h"
 #include "key_table.h"
 #include "BLE/hidkbd.h"
-
-// The maximum number of keys on this keyboard, recommend 120.
-#define KEY_MAP_SIZE 120
 
 uint32_t last_pressed = 0;
 KEYBOARD_BOOT_STATE k_state = K_STATE_0_START;
@@ -161,7 +159,7 @@ int ScanKeyAndGenerateReport(uint8_t *current_key_map, uint8_t key_num) {
     if (is_long_key_trigged) {
         return 0;
     }
-/*     PRINT("key8=[");
+     PRINT("key8=[");
      for(int i = 0; i < 8; i++) {
      if(i) PRINT(" ");
      PRINT("%#x", curruent_key_8[i]);
@@ -174,7 +172,7 @@ int ScanKeyAndGenerateReport(uint8_t *current_key_map, uint8_t key_num) {
      PRINT("%#x", curruent_key_16[i]);
      }
      PRINT("]\n\n");
-*/
+
     if (tmos_memcmp(curruent_key_8, last_key_8, 8) != true) {
         if (lwrb_get_free(&KEY_buff) < 8 + 1)
             return -1;
@@ -311,6 +309,22 @@ void ScanKeyPPK() {
     int ret = ScanKeyAndGenerateReport(current_key_map, key_num);
 }
 
+void ScanKeyUT() {
+    static uint8_t current_key_map[KEY_MAP_SIZE] = { 0 };
+    uint8_t key_num = ScanKeyUltraThin(current_key_map);
+    if (key_num!=KEYSCAN_NOT_READY){
+        if(key_num>0){
+        PRINT("raw keys=[");
+        for(int i = 0; i < key_num; i++) {
+        if(i) PRINT(" ");
+        PRINT("%#x", current_key_map[i]);
+        }
+        PRINT("]\n");
+        }
+      int ret = ScanKeyAndGenerateReport(current_key_map, key_num);
+    }
+}
+
 void key_loop() {
     static uint32_t ms_last_state_change = 0;
     static uint8_t keyboard_id_buff[20];
@@ -335,6 +349,11 @@ void key_loop() {
     case K_STATE_0_START:
         PRINT("beginning keyboard boot sequence...\n");
         ms_last_state_change = ms_current;
+#ifdef KEYBOARD_TYPE_ULTRATHIN
+    InitScanPins();
+    k_state = K_STATE_6_ID_RECEIVED;
+    break;
+#endif
         /* 配置串口0：先配置IO口模式，再配置串口 */
         GPIOB_SetBits(GPIO_Pin_7);
         GPIOB_ModeCfg(GPIO_Pin_4, GPIO_ModeIN_PU);      // RXD-配置上拉输入
@@ -366,9 +385,15 @@ void key_loop() {
         }
         break;
     case K_STATE_2_ON:
-        // Wait for 10us, see https://github.com/pymo/ppk_bluetooth/issues/4
-        if ((ms_current > ms_last_state_change + 10)
-                && GPIOB_ReadPortPin(DCD_PIN)) {
+#ifdef PPK_TYPE_SONY
+        // I don't know why but Sony Clie's DCD response is very hard to capture,
+        // bypassing the DCD check until I get a oscilloscope to check...
+        if(ms_current > ms_last_state_change + 700)
+#else
+        // Wait for 10ms, see https://github.com/pymo/ppk_bluetooth/issues/4
+        if((ms_current > ms_last_state_change + 10) && GPIOB_ReadPortPin(DCD_PIN))
+#endif
+        {
             PRINT("DCD_PIN response done.\n");
             ms_last_state_change = ms_current;
             if (GPIOB_ReadPortPin(RTS_PIN)) { // RTS high, needs to lower it first
@@ -440,6 +465,9 @@ void key_loop() {
 #endif
 #ifdef KEYBOARD_TYPE_PPK
         ScanKeyPPK();
+#endif
+#ifdef KEYBOARD_TYPE_ULTRATHIN
+        ScanKeyUT();
 #endif
         break;
     }

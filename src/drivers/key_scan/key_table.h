@@ -10,6 +10,9 @@
 #include <stdint.h>
 #include "key_codes.h"
 
+// The maximum number of keys on the keyboard, it can be larger than the actual key number. recommend 120.
+#define KEY_MAP_SIZE 120
+
 extern uint8_t fn_key_table[];
 extern uint16_t consumer_key_table[];
 extern const uint8_t key8_table[];

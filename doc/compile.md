@@ -27,7 +27,7 @@ In MounRiver, go to Project->Properties->C/C++ Build->Settings, on the right sid
 
 | Macro | Value | Note | 
 | :-------: | :-----------------------------------------------------------------: | :------: |
-| `KEYBOARD_TYPE_PPK` or `KEYBOARD_TYPE_G750`| N/A | The category of keyboard you want to compile for |
+| `KEYBOARD_TYPE_PPK` or `KEYBOARD_TYPE_G750` or `KEYBOARD_TYPE_ULTRATHIN`| N/A | The category of keyboard you want to compile for |
 | `PPK_TYPE_HANDSPRING` or `PPK_TYPE_JORNADA` | N/A | If you are compiling for the Handspring Visor version or Jornada version of the Palm portable keyboard, define this. `KEYBOARD_TYPE_PPK` must also be defined if this is defined. If no `PPK_TYPE_*` is defined, it will compile for all other PPK types. |
 | `PCB_REV` | 1, 2 or 3 | Please check the PCB revision at the upper layer silkscreen of the PCB. (1) silkscreen `CH582F`: no DC-DC circuitry on PCB, also some GPIO wirings are different from later revisions. (2) silkscreen `CH582Fv2`: Pull down GPIO A14 to power on the keyboard. (3) silkscreen `CH582Fv3`: Pull up GPIO A14 to power on the keyboard|
 | `KEYBOARD_LAYOUT_ISO` | N/A | If defined, will compile for the ISO (common in Europe) keyboard layout; if not defined, will compile for ANSI (US) layout.|

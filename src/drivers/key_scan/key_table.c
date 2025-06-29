@@ -56,8 +56,29 @@ HID_KEY_ARROW_DOWN,HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_NONE,         
 HID_KEY_NONE,      HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_NONE,      HID_KEY_NONE,
 HID_KEY_ALT_RIGHT, HID_KEY_BACKSPACE,  HID_KEY_NONE,      HID_KEY_CONTROL_RIGHT,HID_KEY_EUROPE_2
 };
+#elif KEYBOARD_LAYOUT_G740
+//G740 Palm variant scan codes
+const uint8_t key8_table[] =
+{
+HID_KEY_NONE,        HID_KEY_NONE,       HID_KEY_FN,        HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_NONE,      HID_KEY_GUI_LEFT,
+HID_KEY_NONE,        HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_TAB,       HID_KEY_GRAVE,     HID_KEY_NONE,
+HID_KEY_NONE,        HID_KEY_SPACE,      HID_KEY_SHIFT_LEFT,HID_KEY_NONE,         HID_KEY_CONTROL_LEFT,HID_KEY_Q,         HID_KEY_1,         HID_KEY_NONE,
+HID_KEY_NONE,        HID_KEY_NONE,       HID_KEY_Z,         HID_KEY_S,            HID_KEY_A,           HID_KEY_W,         HID_KEY_2,         HID_KEY_NONE,
+HID_KEY_NONE,        HID_KEY_C,          HID_KEY_X,         HID_KEY_D,            HID_KEY_E,           HID_KEY_4,         HID_KEY_3,         HID_KEY_NONE,
+HID_KEY_SHIFT_RIGHT, HID_KEY_NONE,       HID_KEY_V,         HID_KEY_F,            HID_KEY_T,           HID_KEY_R,         HID_KEY_5,         HID_KEY_ARROW_DOWN,
+HID_KEY_NONE,        HID_KEY_N,          HID_KEY_B,         HID_KEY_H,            HID_KEY_G,           HID_KEY_Y,         HID_KEY_6,         HID_KEY_NONE,
+HID_KEY_NONE,        HID_KEY_NONE,       HID_KEY_M,         HID_KEY_J,            HID_KEY_U,           HID_KEY_7,         HID_KEY_8,         HID_KEY_NONE,
+HID_KEY_NONE,        HID_KEY_COMMA,      HID_KEY_K,         HID_KEY_I,            HID_KEY_O,           HID_KEY_0,         HID_KEY_9,         HID_KEY_NONE,
+HID_KEY_NONE,        HID_KEY_PERIOD,     HID_KEY_SLASH,     HID_KEY_L,            HID_KEY_SEMICOLON,   HID_KEY_P,         HID_KEY_MINUS,     HID_KEY_NONE,
+HID_KEY_NONE,        HID_KEY_NONE,       HID_KEY_APOSTROPHE,HID_KEY_NONE,         HID_KEY_BRACKET_LEFT,HID_KEY_EQUAL,     HID_KEY_NONE,      HID_KEY_NONE,
+HID_KEY_CAPS_LOCK,   HID_KEY_ARROW_UP,   HID_KEY_RETURN,    HID_KEY_BRACKET_RIGHT,HID_KEY_SPACE,       HID_KEY_BACKSLASH, HID_KEY_ARROW_LEFT,HID_KEY_NONE,
+HID_KEY_ARROW_RIGHT, HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_DELETE,    HID_KEY_NONE,
+HID_KEY_NONE,        HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_NONE,      HID_KEY_NONE,
+HID_KEY_PRINT_SCREEN,HID_KEY_BACKSPACE,  HID_KEY_NONE,      HID_KEY_APPLICATION,  HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_NONE,
+HID_KEY_NONE,        HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_ALT_RIGHT
+};
 #else
-//G750 US scan codes
+//G750, G7L0 and G7L1 US scan codes (assume alt and Today keycaps are swapped)
 const uint8_t key8_table[] =
 {
 HID_KEY_NONE,      HID_KEY_NONE,       HID_KEY_FN,        HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_NONE,      HID_KEY_GUI_LEFT,
@@ -74,7 +95,8 @@ HID_KEY_NONE,      HID_KEY_NONE,       HID_KEY_APOSTROPHE,HID_KEY_NONE,         
 HID_KEY_CAPS_LOCK, HID_KEY_SHIFT_RIGHT,HID_KEY_RETURN,    HID_KEY_BRACKET_RIGHT,HID_KEY_SPACE,       HID_KEY_BACKSLASH, HID_KEY_ARROW_LEFT,HID_KEY_NONE,
 HID_KEY_ARROW_DOWN,HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_DELETE,    HID_KEY_NONE,
 HID_KEY_NONE,      HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_NONE,      HID_KEY_NONE,
-HID_KEY_ALT_RIGHT, HID_KEY_BACKSPACE,  HID_KEY_NONE,      HID_KEY_CONTROL_RIGHT
+HID_KEY_ALT_RIGHT, HID_KEY_BACKSPACE,  HID_KEY_NONE,      HID_KEY_CONTROL_RIGHT,HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_NONE,
+HID_KEY_NONE,      HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_SPACE
 };
 #endif
 
@@ -133,7 +155,7 @@ HID_KEY_CAPS_LOCK,   HID_KEY_TAB,          HID_KEY_CONTROL_LEFT,HID_KEY_1,      
 HID_KEY_NONE,        HID_KEY_NONE,         HID_KEY_FN,          HID_KEY_ALT_LEFT,   HID_KEY_NONE,HID_KEY_NONE, HID_KEY_NONE,  HID_KEY_NONE,
 HID_KEY_NONE,        HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_NONE,       HID_KEY_C,   HID_KEY_V,    HID_KEY_B,     HID_KEY_N,
 HID_KEY_MINUS,       HID_KEY_EQUAL,        HID_KEY_BACKSPACE,   HID_KEY_HOME,       HID_KEY_8,   HID_KEY_9,    HID_KEY_0,     HID_KEY_GRAVE,
-HID_KEY_BRACKET_LEFT,HID_KEY_BRACKET_RIGHT,HID_KEY_BACKSLASH,   HID_KEY_END,        HID_KEY_U,   HID_KEY_I,    HID_KEY_O,     HID_KEY_P,
+HID_KEY_BRACKET_LEFT,HID_KEY_BRACKET_RIGHT,HID_KEY_EUROPE_1,    HID_KEY_END,        HID_KEY_U,   HID_KEY_I,    HID_KEY_O,     HID_KEY_P,
 HID_KEY_APOSTROPHE,  HID_KEY_RETURN,       HID_KEY_PAGE_UP,     HID_KEY_NONE,       HID_KEY_J,   HID_KEY_K,    HID_KEY_L,     HID_KEY_SEMICOLON,
 HID_KEY_SLASH,       HID_KEY_ARROW_UP,     HID_KEY_PAGE_DOWN,   HID_KEY_NONE,       HID_KEY_M,   HID_KEY_COMMA,HID_KEY_PERIOD,HID_KEY_ALT_RIGHT,
 HID_KEY_DELETE,      HID_KEY_ARROW_LEFT,   HID_KEY_ARROW_DOWN,  HID_KEY_ARROW_RIGHT,HID_KEY_NONE,HID_KEY_NONE, HID_KEY_NONE,  HID_KEY_NONE,
@@ -214,6 +236,72 @@ void init_fn_key_table(){
     fn_key_table[HID_KEY_INSERT] = HID_KEY_PRINT_SCREEN;
 #endif
 }
+#endif
+/*3   4   9   10  14
+1   Up  M   U   Down    K
+2   Left    N   R Fn    R Space J
+5   Return  BS  P   /   =
+6   .   '   O   Del -
+7   ,   ;   I   Right   L
+8               RShift
+11  V   B   F   C   L Alt
+12  Caps    L Ctrl  D   X   T
+13  H   G   L Fn    L Space Y
+15  Q   W   A   L Shift E
+16  Cmd Tab S   Z   R
+*/
+#ifdef KEYBOARD_TYPE_ULTRATHIN
+const uint8_t key8_table[] = //P10900U keycodes
+{
+HID_KEY_NONE,
+HID_KEY_ARROW_UP,  HID_KEY_M,           HID_KEY_U,   HID_KEY_ARROW_DOWN,    HID_KEY_K,
+HID_KEY_ARROW_LEFT,HID_KEY_N,           HID_KEY_FN2, HID_KEY_SPACE/*right*/,HID_KEY_J,
+HID_KEY_RETURN,    HID_KEY_BACKSPACE,   HID_KEY_P,   HID_KEY_SLASH,         HID_KEY_EQUAL,
+HID_KEY_PERIOD,    HID_KEY_APOSTROPHE,  HID_KEY_O,   HID_KEY_DELETE,        HID_KEY_MINUS,
+HID_KEY_COMMA,     HID_KEY_SEMICOLON,   HID_KEY_I,   HID_KEY_ARROW_RIGHT,   HID_KEY_L,
+HID_KEY_NONE,      HID_KEY_NONE,        HID_KEY_NONE,HID_KEY_SHIFT_RIGHT,   HID_KEY_NONE,
+HID_KEY_V,         HID_KEY_B,           HID_KEY_F,   HID_KEY_C,             HID_KEY_ALT_LEFT,
+HID_KEY_CAPS_LOCK, HID_KEY_CONTROL_LEFT,HID_KEY_D,   HID_KEY_X,             HID_KEY_T,
+HID_KEY_H,         HID_KEY_G,           HID_KEY_FN,  HID_KEY_SPACE/*left*/, HID_KEY_Y,
+HID_KEY_Q,         HID_KEY_W,           HID_KEY_A,   HID_KEY_SHIFT_LEFT,    HID_KEY_E,
+HID_KEY_GUI_LEFT,  HID_KEY_TAB,         HID_KEY_S,   HID_KEY_Z,             HID_KEY_R
+};
+
+void init_fn_key_table(){
+    fn_key_table[HID_KEY_TAB] = HID_KEY_ESCAPE;
+    fn_key_table[HID_KEY_ARROW_UP] = HID_KEY_PAGE_UP;
+    fn_key_table[HID_KEY_ARROW_DOWN] = HID_KEY_PAGE_DOWN;
+    fn_key_table[HID_KEY_ARROW_LEFT] = HID_KEY_HOME;
+    fn_key_table[HID_KEY_ARROW_RIGHT] = HID_KEY_END;
+    fn_key_table[HID_KEY_DELETE] = HID_KEY_INSERT;
+    fn_key_table[HID_KEY_Q] = HID_KEY_1;
+    fn_key_table[HID_KEY_W] = HID_KEY_2;
+    fn_key_table[HID_KEY_E] = HID_KEY_3;
+    fn_key_table[HID_KEY_R] = HID_KEY_4;
+    fn_key_table[HID_KEY_T] = HID_KEY_5;
+    fn_key_table[HID_KEY_Y] = HID_KEY_6;
+    fn_key_table[HID_KEY_U] = HID_KEY_7;
+    fn_key_table[HID_KEY_I] = HID_KEY_8;
+    fn_key_table[HID_KEY_O] = HID_KEY_9;
+    fn_key_table[HID_KEY_P] = HID_KEY_0;
+    fn_key_table[HID_KEY_SLASH] = HID_KEY_BACKSLASH;
+    fn_key_table[HID_KEY_MINUS] = HID_KEY_BRACKET_LEFT;
+    fn_key_table[HID_KEY_EQUAL] = HID_KEY_BRACKET_RIGHT;
+#ifdef ENABLE_NUMLOCK
+    fn_key_table[HID_KEY_CAPS_LOCK] = HID_KEY_NUM_LOCK;
+#endif
+    fn_key_table[HID_KEY_J] = HID_KEY_WWW_HOME;
+    fn_key_table[HID_KEY_K] = HID_KEY_APPLICATION;
+    fn_key_table[HID_KEY_COMMA] = HID_KEY_VOL_DEC;
+    fn_key_table[HID_KEY_PERIOD] = HID_KEY_VOL_INC;
+    fn_key_table[HID_KEY_SPACE] = HID_KEY_PLAY;
+    fn_key_table[HID_KEY_G] = HID_KEY_MODE_USB;
+    fn_key_table[HID_KEY_A] = HID_KEY_MODE_BLE_CHAN_1;
+    fn_key_table[HID_KEY_S] = HID_KEY_MODE_BLE_CHAN_2;
+    fn_key_table[HID_KEY_D] = HID_KEY_MODE_BLE_CHAN_3;
+    fn_key_table[HID_KEY_F] = HID_KEY_MODE_BLE_CHAN_4;
+}
+
 #endif
 
 uint8_t key8_table_size = sizeof(key8_table);

@@ -67,7 +67,7 @@ uint8_t AdcToBatteryPercentage(uint32_t adc_value) {
         adcsum += bat_latest_samples[i];
     }
     uint32_t adcavg = adcsum / BAT_SAMPLE_WINDOW_SIZE;
-    PRINT("window average adc: %d\n", adcavg);
+    //PRINT("window average adc: %d\n", adcavg);
     // Looks up the table to determine the percentage
     uint8_t percent = 100;
     int n;
@@ -90,15 +90,16 @@ uint8_t AdcToBatteryPercentage(uint32_t adc_value) {
     if (n > 20) {
         percent = 100;
     }
+    PRINT("Battery percent %d\n", percent);
     return percent;
 }
 
 void ADCBatterySample() {
     ADC_ExtSingleChSampInit(SampleFreq_3_2, ADC_PGA_0);
-    ADC_ChannelCfg(BATTERY_PIN_CHANNEL);
     uint32_t adcsum = 0;
     GPIOA_ModeCfg(BATTERY_PIN, GPIO_ModeIN_Floating);
     signed short RoughCalib_Value = ADC_DataCalib_Rough(); // 用于计算ADC内部偏差，记录到全局变量 RoughCalib_Value中
+    ADC_ChannelCfg(BATTERY_PIN_CHANNEL);
     for (uint8_t i = 0; i < 20; i++) {
         adcsum += ADC_ExcutSingleConver() + RoughCalib_Value;      // 连续采样20次
     }

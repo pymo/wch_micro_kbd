@@ -19,7 +19,7 @@ void raw_to_hid_keycode(uint8_t *index, uint8_t *keyVal, uint8_t len)
             PRINT("raw keycode %#x out of range!\n", index[i]);
             continue;
         }
-        //PRINT("%d -> %#x\n", index[i], key8_table[index[i]]);
+        PRINT("%d -> %#x\n", index[i], key8_table[index[i]]);
         if (!key8_table[index[i]])
             continue;
         keyVal[idx++] = key8_table[index[i]];
@@ -178,6 +178,10 @@ bool is_fn_pressed(uint8_t *hid_keycodes, uint8_t num){
     {
         if (hid_keycodes[i] == HID_KEY_FN){
             hid_keycodes[i] = 0;
+            return true;
+        }
+        if (hid_keycodes[i] == HID_KEY_FN2){
+            hid_keycodes[i] = HID_KEY_SHIFT_LEFT;
             return true;
         }
     }

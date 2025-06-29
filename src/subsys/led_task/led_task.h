@@ -58,12 +58,12 @@ void update_led_state(void);
 //   - blink three times: connected to host 3
 // Green LED: Capslock
 //   - constant on: Capslock on
-// Yellow LED: Numlock / battery state
+// Red LED: Numlock / battery state
 //   - constant on: Numlock on (overrides the battery indicator display)
 //   - blink once: 20% battery
 //   - blink twice: 15% battery
 //   - blink three times: 10% battery
-// Blue+Green+Yellow LED constant on: Keyboard initializing.
+// Blue+Green+Red LED constant on: Keyboard initializing.
 
 void set_led_num(bool s);
 void set_led_cap(bool s);
