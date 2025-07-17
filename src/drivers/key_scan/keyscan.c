@@ -1,5 +1,4 @@
 #include "keyscan.h"
-#include "keyscan_ultrathin.h"
 #include "key_parse.h"
 #include "soc.h"
 #include "RingBuffer/lwrb.h"
@@ -12,12 +11,15 @@
 #include "HAL/HAL.h"
 #include "USB/usbuser.h"
 #include "key_special.h"
-#include "key_table.h"
+#include "key_util.h"
 #include "BLE/hidkbd.h"
 
-uint32_t last_pressed = 0;
-KEYBOARD_BOOT_STATE k_state = K_STATE_0_START;
-bool is_first_boot = true;
+#include "keyscan_ultrathin.h"
+#include "keyscan_ppk.h"
+#include "keyscan_g750.h"
+
+KeyboardBootState k_state = K_STATE_0_START;
+static uint8_t current_key_map[MAX_KEY_NUM] = { 0 };
 
 __HIGH_CODE
 void RstAllPins(void) {
@@ -25,62 +27,7 @@ void RstAllPins(void) {
 }
 
 __HIGH_CODE
-void SetAllPins(void) {/*
- //PWR_PeriphWakeUpCfg( DISABLE, RB_SLP_GPIO_WAKE, 0 );
- GPIOA_SetBits(bTXD1);
- GPIOA_ModeCfg(bTXD1, GPIO_ModeOut_PP_5mA);
- UART1_DefInit();
- UART1_BaudRateCfg(921600);*/
-
-}
-
-#if PCB_REV >= 3
-#define TurnOffVcc(pin) GPIOA_ResetBits(pin)
-#define TurnOnVcc(pin)  GPIOA_SetBits(pin)
-#else
-#define TurnOffVcc(pin) GPIOA_SetBits(pin)
-#define TurnOnVcc(pin)  GPIOA_ResetBits(pin)
-#endif
-bool ContainsKeyboardId(uint8_t* keyboard_id_buff, uint8_t keyboard_id_buff_len){
-    for (uint8_t i = 0; i< keyboard_id_buff_len; ++i){
-        if (keyboard_id_buff_len >= 2){
-            if(keyboard_id_buff[keyboard_id_buff_len - 2] == KEYBOARD_ID0
-                    && keyboard_id_buff[keyboard_id_buff_len - 1] == KEYBOARD_ID1) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-
-void keyPress(uint8_t *pbuf, uint8_t *key_num, uint8_t raw_keycode) {
-    for (uint8_t i = 0; i < *key_num; ++i) {
-        if (raw_keycode == pbuf[i])
-            return;
-    }
-    pbuf[*key_num] = raw_keycode;
-    (*key_num)++;
-    last_pressed = TMOS_GetSystemClock() * SYSTEM_TIME_MICROSEN  / 1000;
-}
-
-void keyRelease(uint8_t *pbuf, uint8_t *key_num, uint8_t raw_keycode) {
-    for (uint8_t i = 0; i < *key_num; ++i) {
-        if (raw_keycode == pbuf[i]) {
-            pbuf[i] = 0;
-            // Remove the item at i and move the following items (if there are any) forward.
-            *key_num = CompactIntegers(pbuf, *key_num);
-            return;
-        }
-    }
-}
-
-// Reset the key buffers
-void keyReset(uint8_t *pbuf, uint8_t *key_num) {
-    for (uint8_t i = 0; i < *key_num; ++i) {
-        pbuf[i] = 0;
-    }
-    *key_num = 0;
+void SetAllPins(void) {
 }
 
 void ReportKeys(void) {
@@ -109,7 +56,7 @@ void ReportKeys(void) {
 }
 
 int ScanKeyAndGenerateReport(uint8_t *current_key_map, uint8_t key_num) {
-    static uint8_t last_key_map[KEY_MAP_SIZE] = { 0 };
+    static uint8_t last_key_map[MAX_KEY_NUM] = { 0 };
     uint8_t curruent_key_8[8] = { 0 };
     uint8_t curruent_key_16[16] = { 0 };
     static uint8_t last_key_8[8] = { 0 };
@@ -129,7 +76,7 @@ int ScanKeyAndGenerateReport(uint8_t *current_key_map, uint8_t key_num) {
     uint32_t current_time = get_current_time();
 
     if (tmos_memcmp(current_key_map, last_key_map,
-            KEY_MAP_SIZE) == true) {
+            MAX_KEY_NUM) == true) {
         if (!is_key || (current_time - last_time <= LONGKEY_TIME)
                 || is_long_key_trigged) {
             return 0;
@@ -142,7 +89,7 @@ int ScanKeyAndGenerateReport(uint8_t *current_key_map, uint8_t key_num) {
     }
     // Back up the current_key_map into last_key_map
     last_time = current_time;
-    tmos_memcpy(last_key_map, current_key_map, KEY_MAP_SIZE);
+    tmos_memcpy(last_key_map, current_key_map, MAX_KEY_NUM);
     // Parse raw keycodes into HID keycodes, including special keys
     int ret = key_parse(current_key_map, key_num, curruent_key_8,
             curruent_key_16);
@@ -159,6 +106,7 @@ int ScanKeyAndGenerateReport(uint8_t *current_key_map, uint8_t key_num) {
     if (is_long_key_trigged) {
         return 0;
     }
+#ifdef DEBUG
      PRINT("key8=[");
      for(int i = 0; i < 8; i++) {
      if(i) PRINT(" ");
@@ -172,7 +120,7 @@ int ScanKeyAndGenerateReport(uint8_t *current_key_map, uint8_t key_num) {
      PRINT("%#x", curruent_key_16[i]);
      }
      PRINT("]\n\n");
-
+#endif
     if (tmos_memcmp(curruent_key_8, last_key_8, 8) != true) {
         if (lwrb_get_free(&KEY_buff) < 8 + 1)
             return -1;
@@ -216,123 +164,11 @@ void PrintStringToHost(uint8_t *current_key_map, uint8_t *key_num, uint8_t *str,
     }
 }
 
-void ScanKeyG750() {
-    static uint8_t keyboard_rx_buff[100];
-    static uint8_t keyboard_rx_buff_len = 0;
-    static uint8_t last_byte = 0;
-    static uint8_t current_key_map[KEY_MAP_SIZE] = { 0 };
-    static uint8_t key_num = 0;
-    // Append the newly read data to the end of the previous data (if there is any left).
-    uint8_t len = UART0_RecvString(keyboard_rx_buff + keyboard_rx_buff_len);
-    uint8_t i = 0;
-
-    for (i = keyboard_rx_buff_len; i < keyboard_rx_buff_len+len; i++) {
-        PRINT("byte from keyboard: %#x \n", keyboard_rx_buff[i]);
-    }
-    keyboard_rx_buff_len += len;
-
-    for(i = 0;i+1 < keyboard_rx_buff_len;i++)
-    {
-        uint8_t raw_keycode = keyboard_rx_buff[i]&0b01111111;
-        if (raw_keycode^keyboard_rx_buff[i+1]==0b11111111) {
-            bool key_up = keyboard_rx_buff[i]&0b10000000;
-#if PRINT_KEYCODE_MODE
-            if (!key_up) {
-                char str_buf[10];
-                sprintf(str_buf, "%#x \0", raw_keycode);
-                PrintStringToHost(current_key_map, &key_num, str_buf, strlen(str_buf));
-            }
-#else
-            if (key_up) keyRelease(current_key_map, &key_num, raw_keycode);
-            else keyPress(current_key_map, &key_num, raw_keycode);
-            int ret = ScanKeyAndGenerateReport(current_key_map, key_num);
-#endif
-            i++;
-        }
-    }
-    // The incoming keycode is always 2 bytes, so if this is the last byte, we have to wait until the next UART read to get the second byte (or something is wrong)
-    if (i+1==keyboard_rx_buff_len) {
-        keyboard_rx_buff[0]=keyboard_rx_buff[i];
-        keyboard_rx_buff_len = 1;
-    } else {
-        keyboard_rx_buff_len = 0;
-    }
-    // We still need to scan the keys even if no new keys are pressed, to handle the long press key.
-    int ret = ScanKeyAndGenerateReport(current_key_map, key_num);
-}
-
-void ScanKeyPPK() {
-        static uint8_t keyboard_rx_buff[100];
-        static uint8_t keyboard_rx_buff_len = 0;
-        static uint8_t last_byte = 0;
-        static uint8_t current_key_map[KEY_MAP_SIZE] = { 0 };
-        static uint8_t key_num = 0;
-        // Append the newly read data to the end of the previous data (if there is any left).
-        uint8_t len = UART0_RecvString(keyboard_rx_buff + keyboard_rx_buff_len);
-        uint8_t i = 0;
-
-        keyboard_rx_buff_len += len;
-
-    for (i = 0; i < keyboard_rx_buff_len; i++) {
-        PRINT("byte from keyboard: %#x \n", keyboard_rx_buff[i]);
-        uint8_t raw_keycode = keyboard_rx_buff[i] & 0b01111111;
-        // '1''s raw keycode is 0, but we want to use 0 to represent no key in the array,
-        // so we artificially remap '1' to 27.
-        // This is also why in key_table.h, index 27 is set to HID_KEY_1.
-        if (raw_keycode == 0) raw_keycode = 27;
-        bool key_up = keyboard_rx_buff[i] & 0b10000000;
-        if (last_byte == keyboard_rx_buff[i]) {
-            // keyboard duplicates the final key-up byte
-            keyReset(current_key_map, &key_num);
-            continue;
-        } else {
-            last_byte = keyboard_rx_buff[i];
-#if PRINT_KEYCODE_MODE
-            if (!key_up) {
-                char str_buf[10];
-                sprintf(str_buf, "%#x \0", raw_keycode);
-                PrintStringToHost(current_key_map, &key_num, str_buf, strlen(str_buf));
-            }
-            continue;
-#endif
-            if (key_up) {
-                keyRelease(current_key_map, &key_num, raw_keycode);
-            } else {
-                keyPress(current_key_map, &key_num, raw_keycode);
-            }
-        }
-        int ret = ScanKeyAndGenerateReport(current_key_map, key_num);
-
-    }
-    keyboard_rx_buff_len = 0;
-    // We still need to scan the keys even if no new keys are pressed, to handle the long press key.
-    int ret = ScanKeyAndGenerateReport(current_key_map, key_num);
-}
-
-void ScanKeyUT() {
-    static uint8_t current_key_map[KEY_MAP_SIZE] = { 0 };
-    uint8_t key_num = ScanKeyUltraThin(current_key_map);
-    if (key_num!=KEYSCAN_NOT_READY){
-        if(key_num>0){
-        PRINT("raw keys=[");
-        for(int i = 0; i < key_num; i++) {
-        if(i) PRINT(" ");
-        PRINT("%#x", current_key_map[i]);
-        }
-        PRINT("]\n");
-        }
-      int ret = ScanKeyAndGenerateReport(current_key_map, key_num);
-    }
-}
-
 void key_loop() {
     static uint32_t ms_last_state_change = 0;
-    static uint8_t keyboard_id_buff[20];
-    static uint8_t keyboard_id_buff_len = 0;
     uint32_t ms_current = TMOS_GetSystemClock() * SYSTEM_TIME_MICROSEN  / 1000;
     if (ms_current < ms_last_state_change) {
-        PRINT(
-                "ms_current decreased, set the ms_last_state_change to be the same.\n");
+        PRINT("ms_current decreased, set the ms_last_state_change to be the same.\n");
         ms_last_state_change = ms_current;
     }
     bool keyboard_initialized = k_state >= K_STATE_6_ID_RECEIVED;
@@ -343,108 +179,15 @@ void key_loop() {
             && ms_current > ms_last_state_change + INIT_FAILURE_TIMEOUT_MS) {
         PRINT("Failed to boot keyboard, retry...\n");
         k_state = K_STATE_0_START;
-        keyboard_id_buff_len = 0;
     }
-    switch (k_state) {
-    case K_STATE_0_START:
-        PRINT("beginning keyboard boot sequence...\n");
-        ms_last_state_change = ms_current;
-#ifdef KEYBOARD_TYPE_ULTRATHIN
-    InitScanPins();
-    k_state = K_STATE_6_ID_RECEIVED;
-    break;
-#endif
-        /* 配置串口0：先配置IO口模式，再配置串口 */
-        GPIOB_SetBits(GPIO_Pin_7);
-        GPIOB_ModeCfg(GPIO_Pin_4, GPIO_ModeIN_PU);      // RXD-配置上拉输入
-        GPIOB_ModeCfg(GPIO_Pin_7, GPIO_ModeOut_PP_5mA); // TXD-配置推挽输出，TXD not used in this application.
-        UART0_DefInit();
-#ifdef KEYBOARD_TYPE_G750
-        UART0_BaudRateCfg(4800);
-        UART0_ByteTrigCfg(UART_1BYTE_TRIG);
-#endif
-#ifdef KEYBOARD_TYPE_PPK
-        UART0_BaudRateCfg(9600);
-#endif
-        GPIOB_ModeCfg(RTS_PIN | DCD_PIN, GPIO_ModeIN_Floating);
-        TurnOffVcc(VCC_PIN);
-        GPIOA_ModeCfg(VCC_PIN, GPIO_ModeOut_PP_20mA); // VCC_CTL配置推挽输出，注意先让IO口输出高电平
-        k_state = K_STATE_1_OFF;
-        break;
-    case K_STATE_1_OFF:
-        if (ms_current > ms_last_state_change + (is_first_boot)?KEYBOARD_REBOOT_DELAY_MS_LONG:KEYBOARD_REBOOT_DELAY_MS_SHORT) {
+    if(!keyboard_initialized) {
+        KeyboardBootState state_before = k_state;
+        InitKeyboard(&k_state, ms_current, ms_last_state_change);
+        // If the state changes, remember the timestamp of it.
+        if (k_state!=state_before){
             ms_last_state_change = ms_current;
-            TurnOnVcc(VCC_PIN);
-#if defined(PPK_TYPE_HANDSPRING) || defined(KEYBOARD_TYPE_G750)
-            // TODO(): This should be K_STATE_5_RTS_HIGH, but the hardware circuit has some issues when directly connecting RXD0, should change back to K_STATE_5_RTS_HIGH once we have 0ohm disconnect in the circuit.
-            k_state = K_STATE_6_ID_RECEIVED;
-            PRINT("Keyboard init complete.\n");
-#else
-            k_state = K_STATE_2_ON;
-#endif
         }
-        break;
-    case K_STATE_2_ON:
-#ifdef PPK_TYPE_SONY
-        // I don't know why but Sony Clie's DCD response is very hard to capture,
-        // bypassing the DCD check until I get a oscilloscope to check...
-        if(ms_current > ms_last_state_change + 700)
-#else
-        // Wait for 10ms, see https://github.com/pymo/ppk_bluetooth/issues/4
-        if((ms_current > ms_last_state_change + 10) && GPIOB_ReadPortPin(DCD_PIN))
-#endif
-        {
-            PRINT("DCD_PIN response done.\n");
-            ms_last_state_change = ms_current;
-            if (GPIOB_ReadPortPin(RTS_PIN)) { // RTS high, needs to lower it first
-                GPIOB_ResetBits(RTS_PIN);
-                GPIOB_ModeCfg(RTS_PIN, GPIO_ModeOut_PP_5mA);
-                k_state = K_STATE_3_DCD_RESPONDED;
-            } else {
-                GPIOB_ModeCfg(RTS_PIN, GPIO_ModeOut_PP_5mA);
-                k_state = K_STATE_4_RTS_LOW;
-            }
-        }
-        break;
-    case K_STATE_3_DCD_RESPONDED:
-        if (ms_current > ms_last_state_change + 200) {
-            ms_last_state_change = ms_current;
-            k_state = K_STATE_4_RTS_LOW;
-        }
-        break;
-    case K_STATE_4_RTS_LOW:
-        if (ms_current > ms_last_state_change + 10) {
-            GPIOB_SetBits(RTS_PIN);
-            PRINT("waiting for keyboard serial ID... \n");
-            ms_last_state_change = ms_current;
-            k_state = K_STATE_5_RTS_HIGH;
-        }
-        break;
-
-    case K_STATE_5_RTS_HIGH:
-        if (keyboard_id_buff_len >= 10) {
-            PRINT(
-                    "Serial buffer exhausted before keyboard serial ID received, reuse the buffer.\n");
-            keyboard_id_buff_len = 0;
-        }
-        uint8_t len = UART0_RecvString(keyboard_id_buff + keyboard_id_buff_len);
-        for (int i = 0; i < len; i++) {
-            PRINT("byte from keyboard: %#x\n",
-                    keyboard_id_buff[keyboard_id_buff_len + i]);
-        }
-
-        keyboard_id_buff_len += len;
-            // Checks keyboard ID
-            if (ContainsKeyboardId(keyboard_id_buff, keyboard_id_buff_len)){
-                PRINT("Keyboard init complete.\n");
-                is_first_boot = false;
-                last_pressed = ms_current;
-                ms_last_state_change = ms_current;
-                k_state = K_STATE_6_ID_RECEIVED;
-                keyboard_id_buff_len = 0;
-            }
-        break;
-    case K_STATE_6_ID_RECEIVED:
+    } else {
         ms_last_state_change = ms_current;
         // Reboot if no recent keypress, otherwise keyboard falls asleep
         uint32 epoc_ms = TMOS_GetSystemClock() * SYSTEM_TIME_MICROSEN  / 1000;
@@ -453,23 +196,21 @@ void key_loop() {
             // This could happen after BLE channel switch, simply reset the last_pressed value.
             PRINT("TMOS SystemClock has been reset, update last_pressed.\n");
             last_pressed = epoc_ms;
-        } else if (epoc_ms - last_pressed > KEEPALIVE_TIMEOUT_MS) {
-            PRINT("rebooting keyboard for timeout\n");
-            last_pressed = epoc_ms;
-            // Briefly gets TMOS out of sleep mode, otherwise Serial port does not work properly during the keyboard init.
-            pm_start_working(PM_BRIEF_KEEPALIVE_TIMEOUT, PM_IDLE_TIMEOUT);
-            k_state = K_STATE_0_START;
+        } else {
+#ifndef KEYBOARD_TYPE_ULTRATHIN
+            if (epoc_ms - last_pressed > KEEPALIVE_TIMEOUT_MS) {
+                PRINT("rebooting keyboard for timeout\n");
+                last_pressed = epoc_ms;
+                // Briefly gets TMOS out of sleep mode, otherwise Serial port does not work properly during the keyboard init.
+                pm_start_working(PM_BRIEF_KEEPALIVE_TIMEOUT, PM_IDLE_TIMEOUT);
+                k_state = K_STATE_0_START;
+            }
+#endif
         }
-#ifdef KEYBOARD_TYPE_G750
-        ScanKeyG750();
-#endif
-#ifdef KEYBOARD_TYPE_PPK
-        ScanKeyPPK();
-#endif
-#ifdef KEYBOARD_TYPE_ULTRATHIN
-        ScanKeyUT();
-#endif
-        break;
+        uint8_t key_num = ScanRawKeycodes(current_key_map);
+        // We still need to scan the keys even if no new keys are pressed, to handle the long press key.
+        if (key_num!=KEYSCAN_NOT_READY){
+          int ret = ScanKeyAndGenerateReport(current_key_map, key_num);
+        }
     }
-
 }

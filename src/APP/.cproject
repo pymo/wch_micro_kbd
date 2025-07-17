@@ -65,7 +65,6 @@
 								<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.compiler.std.2020844713" name="Language standard" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.compiler.std" useByScannerDiscovery="true" value="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.compiler.std.gnu99" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.compiler.defs.177116515" name="Defined symbols (-D)" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.compiler.defs" useByScannerDiscovery="true" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="CONFIG_RISCV"/>
-									<listOptionValue builtIn="false" value="DEBUG=1"/>
 									<listOptionValue builtIn="false" value="PCB_REV=3"/>
 									<listOptionValue builtIn="false" value="DCDC_ENABLE=TRUE"/>
 									<listOptionValue builtIn="false" value="CLK_OSC32K=1"/>
@@ -110,6 +109,7 @@
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.linker.flags.1048167962" name="Linker flags (-Xlinker [option])" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.linker.flags" useByScannerDiscovery="false" valueType="stringList">
 									<listOptionValue builtIn="false" value="--print-memory-usage"/>
 								</option>
+								<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.linker.printf.1699151811" name="Use wchprintf(-lprintf)" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.c.linker.printf" useByScannerDiscovery="false" value="true" valueType="boolean"/>
 								<inputType id="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.c.linker.input.1859223768" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>

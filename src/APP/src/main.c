@@ -15,7 +15,6 @@
 #include "RingBuffer/lwrb.h"
 #include "config.h"
 #include "RF_PHY/rf_sync.h"
-#include "key_scan/key_table.h"
 
 #include "I2C/myi2c.h"
 
@@ -52,8 +51,7 @@ void Main_Circulation() {
  *******************************************************************************/
 int main(void)
 {
-    init_fn_key_table();
-    //HSECFG_Capacitance(HSECap_12p);
+    HSECFG_Capacitance(HSECap_16p);  // Should be the default value for 10pf crystal, but set it just in case.
     PowerMonitor(ENABLE, LPLevel_2V5);
     PFIC_EnableIRQ(WDOG_BAT_IRQn);
 #if (defined (DCDC_ENABLE)) && (DCDC_ENABLE == TRUE)

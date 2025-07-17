@@ -5,25 +5,33 @@
  */
 
 #include "key_parse.h"
-#include "key_table.h"
+#include "key_util.h"
 #include "CH58x_common.h"
 #include "led_task/led_task.h"
 
-bool key_fn_flag;
+#include "keyscan_ultrathin.h"
+#include "keyscan_ppk.h"
+#include "keyscan_g750.h"
 
-void raw_to_hid_keycode(uint8_t *index, uint8_t *keyVal, uint8_t len)
+uint8_t RawToHidKeycodes(uint8_t *raw_keycodes, struct KeyWithLayer *keyVal, uint8_t len)
 {
-    for (int i = 0, idx = 0; i < len; i++)
+    KeyLayerType key_layer = GetKeyLayer(raw_keycodes, len);
+    uint8_t idx = 0;
+    for (int i = 0; i < len; i++)
     {
-        if (index[i]>key8_table_size){
-            PRINT("raw keycode %#x out of range!\n", index[i]);
+        if (raw_keycodes[i]>key8_table_size){
+            PRINT("raw keycode %#x out of range!\n", raw_keycodes[i]);
             continue;
         }
-        PRINT("%d -> %#x\n", index[i], key8_table[index[i]]);
-        if (!key8_table[index[i]])
+        if (!key8_table[raw_keycodes[i]])
             continue;
-        keyVal[idx++] = key8_table[index[i]];
+        struct KeyWithLayer temp_key;
+        temp_key.key = key8_table[raw_keycodes[i]];
+        temp_key.layer = key_layer;
+        temp_key.sent = KEY_SENT_NOTYET;
+        keyVal[idx++] = temp_key;
     }
+    return idx;
 }
 
 struct key16_type key8_to_key16(uint8_t key8)
@@ -43,79 +51,6 @@ void keybuf8_to_keybuf16(uint8_t *key8, uint8_t *key16, uint8_t len)
         struct key16_type temp = key8_to_key16(key8[i]);
 
         key16[temp.index] = temp.val;
-    }
-}
-
-uint8_t CompactIntegers(uint8_t *buf, uint8_t len)
-{
-    uint8_t new_len = 0;
-
-    for (int i = 0; i < len; i++) {
-        if (buf[i] != 0) {
-            buf[new_len] = buf[i];
-            new_len++;
-        }
-    }
-    for (int i = new_len; i < len; i++) {
-        buf[i] = 0;
-    }
-
-    return new_len;
-}
-
-void ModifierKeyHandler(uint8_t *hid_keycodes, uint8_t *keys, uint8_t nums)
-{
-    for (uint8_t i = 0; i < nums; ++i)
-    {
-        switch (hid_keycodes[i]){
-        case HID_KEY_CONTROL_LEFT:
-            keys[0] |= KEYBOARD_MODIFIER_LEFTCTRL;
-            hid_keycodes[i] = 0;
-            break;
-        case HID_KEY_SHIFT_LEFT:
-            keys[0] |= KEYBOARD_MODIFIER_LEFTSHIFT;
-            hid_keycodes[i] = 0;
-            break;
-        case HID_KEY_ALT_LEFT:
-            keys[0] |= KEYBOARD_MODIFIER_LEFTALT;
-            hid_keycodes[i] = 0;
-            break;
-        case HID_KEY_GUI_LEFT:
-            keys[0] |= KEYBOARD_MODIFIER_LEFTGUI;
-            hid_keycodes[i] = 0;
-            break;
-        case HID_KEY_CONTROL_RIGHT:
-            keys[0] |= KEYBOARD_MODIFIER_RIGHTCTRL;
-            hid_keycodes[i] = 0;
-            break;
-        case HID_KEY_SHIFT_RIGHT:
-            keys[0] |= KEYBOARD_MODIFIER_RIGHTSHIFT;
-            hid_keycodes[i] = 0;
-            break;
-        case HID_KEY_ALT_RIGHT:
-            keys[0] |= KEYBOARD_MODIFIER_RIGHTALT;
-            hid_keycodes[i] = 0;
-            break;
-        case HID_KEY_GUI_RIGHT:
-            keys[0] |= KEYBOARD_MODIFIER_RIGHTGUI;
-            hid_keycodes[i] = 0;
-            break;
-        default:
-            break;
-        }
-    }
-}
-
-// If Fn+key is mapped to another key, replace it here.
-// The result key may not be an simple HID keycode, it's OK, we will replace it in key_special.c
-void FnKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
-    if (!key_fn_flag) return;
-    for (uint8_t i = 0; i < nums; ++i)
-    {
-        uint8_t layer2_key = fn_key_table[hid_keycodes[i]];
-        if (layer2_key!=0){
-            hid_keycodes[i] = layer2_key;
-        }
     }
 }
 
@@ -173,69 +108,127 @@ void NumlockKeyHandler(uint8_t *hid_keycodes, uint8_t nums){
     }
 }
 
-bool is_fn_pressed(uint8_t *hid_keycodes, uint8_t num){
-    for (uint8_t i = 0; i < num; ++i)
-    {
-        if (hid_keycodes[i] == HID_KEY_FN){
-            hid_keycodes[i] = 0;
-            return true;
-        }
-        if (hid_keycodes[i] == HID_KEY_FN2){
-            hid_keycodes[i] = HID_KEY_SHIFT_LEFT;
-            return true;
+void LayeredKeyMergeWithLast(
+        struct KeyWithLayer* current_key, uint8_t current_key_num,
+        struct KeyWithLayer* last_key, uint8_t last_key_num)
+{
+    for(int cur_key_idx = 0; cur_key_idx < current_key_num; cur_key_idx++) {
+        for(int last_key_idx = 0; last_key_idx < last_key_num; last_key_idx++) {
+            if (current_key[cur_key_idx].key == last_key[last_key_idx].key){
+                current_key[cur_key_idx] = last_key[last_key_idx];
+            }
         }
     }
-    return false;
 }
 
-int key_parse(uint8_t *raw_key_codes, uint8_t num, uint8_t hid_key8[8], uint8_t hid_key16[16])
+void ModifierKeyHandler(struct KeyWithLayer *hid_keycodes, uint8_t *keys, uint8_t nums)
 {
-    uint8_t current_key[120] = {0};
-    static uint8_t last_key_8[8] = {0};
-    static uint8_t last_key_16[16] = {0};
-    uint8_t key8_num = 0, key16_num = 0;
+    for (uint8_t i = 0; i < nums; ++i)
+    {
+        switch (ConvertLayeredKey(hid_keycodes, nums, i)){
+        case HID_KEY_CONTROL_LEFT:
+            keys[0] |= KEYBOARD_MODIFIER_LEFTCTRL;
+            hid_keycodes[i].key = 0;
+            break;
+        case HID_KEY_SHIFT_LEFT:
+            keys[0] |= KEYBOARD_MODIFIER_LEFTSHIFT;
+            hid_keycodes[i].key = 0;
+            break;
+        case HID_KEY_ALT_LEFT:
+            keys[0] |= KEYBOARD_MODIFIER_LEFTALT;
+            hid_keycodes[i].key = 0;
+            break;
+        case HID_KEY_GUI_LEFT:
+            keys[0] |= KEYBOARD_MODIFIER_LEFTGUI;
+            hid_keycodes[i].key = 0;
+            break;
+        case HID_KEY_CONTROL_RIGHT:
+            keys[0] |= KEYBOARD_MODIFIER_RIGHTCTRL;
+            hid_keycodes[i].key = 0;
+            break;
+        case HID_KEY_SHIFT_RIGHT:
+            keys[0] |= KEYBOARD_MODIFIER_RIGHTSHIFT;
+            hid_keycodes[i].key = 0;
+            break;
+        case HID_KEY_ALT_RIGHT:
+            keys[0] |= KEYBOARD_MODIFIER_RIGHTALT;
+            hid_keycodes[i].key = 0;
+            break;
+        case HID_KEY_GUI_RIGHT:
+            keys[0] |= KEYBOARD_MODIFIER_RIGHTGUI;
+            hid_keycodes[i].key = 0;
+            break;
+        default:
+            break;
+        }
+    }
+}
 
-    raw_to_hid_keycode(raw_key_codes, current_key, num);
+int key_parse(uint8_t *raw_key_codes, uint8_t raw_num, uint8_t hid_key8[8], uint8_t hid_key16[16])
+{
+    struct KeyWithLayer current_key[MAX_KEY_NUM];
+    static struct KeyWithLayer last_key[MAX_KEY_NUM];
+    static uint8_t last_key_num = 0;
+    uint8_t key8_num = 0;
+    uint8_t num = 0;
 
-    /* Set key_fn_flag to true when fn is pressed. Set key_fn_flag to false when all keys are released.
-    // This is to handle the case where user release the Fn key first, then the other key later. (Assume user's intent is to release all keys)
-    if(is_fn_pressed(current_key, num))
-        key_fn_flag = true;
-    if(num==0)
-        key_fn_flag = false;*/
-    key_fn_flag = is_fn_pressed(current_key, num);
-
-    FnKeyHandler(current_key, num);
+    num = RawToHidKeycodes(raw_key_codes, current_key, raw_num);
+    LayeredKeyMergeWithLast(current_key, num, last_key, last_key_num);
+    // Adds a Shift for the FN2 if necessary
+    PreprocessKeyList(current_key, &num);
 #ifdef ENABLE_NUMLOCK
     NumlockKeyHandler(current_key, num);
 #endif
     ModifierKeyHandler(current_key, hid_key8, num);
 
-    uint8_t remain_num = CompactIntegers(current_key, num);
+    num = CompactKeyLayer(current_key, num);
 
 
     /* 对比上次传输的键值，若此次仍存在，则使用上次的传输方式 */
-    for(int key_idx = 0; key_idx < remain_num; key_idx++) {
-        for(int key_8_idx = 2; key_8_idx < 8; key_8_idx++) {
-            if(current_key[key_idx] && 
-                    (last_key_8[key_8_idx] == current_key[key_idx])) {
-                hid_key8[key8_num + 2] = current_key[key_idx];
-                current_key[key_idx] = 0;
+    for(int key_idx = 0; key_idx < num; key_idx++) {
+        if (current_key[key_idx].sent==KEY_SENT_8){
+            hid_key8[key8_num + 2] = ConvertLayeredKey(current_key,num,key_idx);
+            key8_num++;
+        } else if (current_key[key_idx].sent==KEY_SENT_16) {
+            struct key16_type key16_temp = key8_to_key16(ConvertLayeredKey(current_key,num,key_idx));
+            hid_key16[key16_temp.index] |= key16_temp.val;
+        }
+/*        for(int key_8_idx = 2; key_8_idx < 8; key_8_idx++) {
+            if(current_key[key_idx].key > 0 &&
+                    (last_key_8[key_8_idx].key == current_key[key_idx].key)) {
+                current_key[key_idx].layer = last_key_8[key_8_idx].layer;
+                hid_key8[key8_num + 2] = LayeredKeyHandler(current_key[key_idx]);
+                current_key[key_idx].key = 0;
                 key8_num++;
             }
 
             struct key16_type key16_temp = key8_to_key16(current_key[key_idx]);
-            if(current_key[key_idx] && 
+            if(current_key[key_idx].key > 0 &&
                     (last_key_16[key16_temp.index] & key16_temp.val)) {
                 hid_key16[key16_temp.index] |= key16_temp.val;
                 current_key[key_idx] = 0;
                 key16_num++;
             }
-        }
+        }*/
     }
 
     /* 获取剩余的键值， 并加载 */
-    remain_num = CompactIntegers(current_key, remain_num);
+
+    //遍历未发送的键值，8未满则通过8发，8满则通过16发
+    for(int key_idx = 0; key_idx < num; key_idx++) {
+        if (current_key[key_idx].sent!=KEY_SENT_NOTYET) continue;
+        if (key8_num < 6){
+            hid_key8[key8_num + 2] = ConvertLayeredKey(current_key,num,key_idx);
+            current_key[key_idx].sent = KEY_SENT_8;
+            key8_num++;
+        } else {
+            struct key16_type key16_temp = key8_to_key16(ConvertLayeredKey(current_key,num,key_idx));
+            hid_key16[key16_temp.index] |= key16_temp.val;
+            current_key[key_idx].sent = KEY_SENT_16;
+        }
+    }
+
+/*
 
     for(int i = key8_num + 2, j = 0; i < 8; i++) {
         if(j > remain_num - 1)
@@ -255,14 +248,9 @@ int key_parse(uint8_t *raw_key_codes, uint8_t num, uint8_t hid_key8[8], uint8_t 
         current_key[i] = 0;
         key16_num++;
     }
+*/
+    last_key_num = num;
+    memcpy(last_key, current_key, sizeof(struct KeyWithLayer)*num);
 
-    remain_num = CompactIntegers(current_key, remain_num);
-
-    memcpy(last_key_8, hid_key8, 8);
-    memcpy(last_key_16, hid_key16, 16);
-
-    if(remain_num)
-        return -1;
-    
     return 0;
 }

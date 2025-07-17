@@ -20,7 +20,7 @@
 #include "key_parse.h"
 #include "sys/util.h"
 #include "key_codes.h"
-#include "key_table.h"
+#include "key_util.h"
 
 struct speical_data {
     bool key_state;     // 1: press ; 0: release

@@ -1,16 +1,19 @@
 /*
- * keyscan_ultrathin.h
+ * keyscan_ppk.h
  *
- *  Created on: Apr 26, 2025
+ *  Created on: Jun 26, 2025
  *      Author: chen_xin_ming
  */
-#ifdef KEYBOARD_TYPE_ULTRATHIN
 
-#ifndef __KEY_SCAN_ULTRATHIN_H
-#define __KEY_SCAN_ULTRATHIN_H
+#ifdef KEYBOARD_TYPE_G750
+
+#ifndef __KEY_SCAN_G750_H
+#define __KEY_SCAN_G750_H
 
 #include <stdint.h>
 #include "key_util.h"
+
+#define VCC_PIN                     (GPIO_Pin_14)  // GPIOA
 
 extern const uint8_t key8_table[];
 extern uint8_t key8_table_size;
@@ -21,5 +24,5 @@ void PreprocessKeyList(struct KeyWithLayer* key_list, uint8_t* key_num);
 uint8_t ConvertLayeredKey(struct KeyWithLayer* key_list, uint8_t key_num, uint8_t key_index);
 uint8_t ScanRawKeycodes(uint8_t *raw_keys);
 
-#endif // __KEY_SCAN_ULTRATHIN_H
+#endif // __KEY_SCAN_G750_H
 #endif

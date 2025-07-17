@@ -149,26 +149,26 @@
 // a placeholder to indicate the start of custom-defined code. Add new code below it and adjust this value accordingly
 #define HID_KEY_SPECIAL_START_INDEX 0xED
 
-#define HID_KEY_FN2              0xEE
-#define HID_KEY_EMAIL 0xEF
-#define HID_KEY_CALCULATOR 0xF0
-#define HID_KEY_VOL_DEC 0xF1
-#define HID_KEY_VOL_INC 0xF2
-#define HID_KEY_BRIGHTNESS_DEC 0xF3
-#define HID_KEY_BRIGHTNESS_INC 0xF4
-#define HID_KEY_PLAY 0xF5
-#define HID_KEY_PREVIOUS 0xF6
-#define HID_KEY_NEXT 0xF7
-#define HID_KEY_WWW_HOME 0xF8
-#define HID_KEY_WWW_BACK 0xF9
+#define HID_KEY_EMAIL 0xEE
+#define HID_KEY_CALCULATOR 0xEF
+#define HID_KEY_VOL_DEC 0xF0
+#define HID_KEY_VOL_INC 0xF1
+#define HID_KEY_BRIGHTNESS_DEC 0xF2
+#define HID_KEY_BRIGHTNESS_INC 0xF3
+#define HID_KEY_PLAY 0xF4
+#define HID_KEY_PREVIOUS 0xF5
+#define HID_KEY_NEXT 0xF6
+#define HID_KEY_WWW_HOME 0xF7
+#define HID_KEY_WWW_BACK 0xF8
 
 // Keyboard mode and FN key code for convenience.
-#define HID_KEY_MODE_USB 0xFA
-#define HID_KEY_MODE_BLE_CHAN_1 0xFB
-#define HID_KEY_MODE_BLE_CHAN_2 0xFC
-#define HID_KEY_MODE_BLE_CHAN_3 0xFD
-#define HID_KEY_MODE_BLE_CHAN_4 0xFE
-#define HID_KEY_FN              0xFF
+#define HID_KEY_MODE_USB 0xF9
+#define HID_KEY_MODE_BLE_CHAN_1 0xFA
+#define HID_KEY_MODE_BLE_CHAN_2 0xFB
+#define HID_KEY_MODE_BLE_CHAN_3 0xFC
+#define HID_KEY_MODE_BLE_CHAN_4 0xFD
+#define HID_KEY_FN             0xFE
+#define HID_KEY_FN2              0xFF
 
 
 #endif /* DRIVERS_KEY_SCAN_KEY_CODES_H_ */
