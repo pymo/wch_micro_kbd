@@ -1,7 +1,7 @@
 # How to download firmware from PC to CH582 chip
 
 1. Go to the WCH official website to download WCHISPTool download tool,
-(https://www.wch-ic.com/download/WCHISPTool_Setup_exe.html)
+(https://www.wch-ic.com/downloads/WCHISPTool_Setup_exe.html)
 Open it to install, the setting instructions are as follows:
 - Select “CH58x” series and "CH582" chip;
 - Select “USB” in Download Port;

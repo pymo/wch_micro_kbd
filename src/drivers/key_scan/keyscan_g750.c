@@ -71,9 +71,9 @@ HID_KEY_NONE,        HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_ALT_RIGHT
 // (Most common) G750, G7L0 and G7L1 US scan codes (assume alt and Today keycaps are swapped)
 const uint8_t key8_table[] =
 {
-HID_KEY_NONE,      HID_KEY_NONE,       HID_KEY_FN,        HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_NONE,      HID_KEY_GUI_LEFT,
+HID_KEY_NONE,      HID_KEY_NONE,       HID_KEY_CONTROL_LEFT,        HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_NONE,      HID_KEY_NONE,      HID_KEY_GUI_LEFT,
 HID_KEY_NONE,      HID_KEY_NONE,       HID_KEY_NONE,      HID_KEY_NONE,         HID_KEY_NONE,        HID_KEY_TAB,       HID_KEY_GRAVE,     HID_KEY_NONE,
-HID_KEY_NONE,      HID_KEY_SPACE,      HID_KEY_SHIFT_LEFT,HID_KEY_NONE,         HID_KEY_CONTROL_LEFT,HID_KEY_Q,         HID_KEY_1,         HID_KEY_NONE,
+HID_KEY_NONE,      HID_KEY_SPACE,      HID_KEY_SHIFT_LEFT,HID_KEY_NONE,         HID_KEY_FN,HID_KEY_Q,         HID_KEY_1,         HID_KEY_NONE,
 HID_KEY_NONE,      HID_KEY_NONE,       HID_KEY_Z,         HID_KEY_S,            HID_KEY_A,           HID_KEY_W,         HID_KEY_2,         HID_KEY_NONE,
 HID_KEY_NONE,      HID_KEY_C,          HID_KEY_X,         HID_KEY_D,            HID_KEY_E,           HID_KEY_4,         HID_KEY_3,         HID_KEY_NONE,
 HID_KEY_ARROW_UP,  HID_KEY_NONE,       HID_KEY_V,         HID_KEY_F,            HID_KEY_T,           HID_KEY_R,         HID_KEY_5,         HID_KEY_ARROW_RIGHT,

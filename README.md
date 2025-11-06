@@ -4,7 +4,7 @@ A WCH CH582F based Bluetooth controller for wireless keyboards. It is ideal for 
 
 This board is used in two of my projects: [ppk_bluetooth](https://github.com/pymo/ppk_bluetooth), and [g750_bluetooth](https://github.com/pymo/g750_bluetooth). It can potentially be used to convert Serial mouse, or even PS/2 or ADB keyboard/mouse to Bluetooth, but you would need to implement the protocol yourself.
 
-The firmware can also work on CH582-based dev boards with some modifications. For example, it can work on the Palm Ultra-thin Keybaord's Bluetooth board.
+The firmware can also work on other CH582-based dev boards with some modifications. For example, it can work on my [Palm Ultra-thin Keybaord Bluetooth project](https://github.com/pymo/palm_ultrathin_bluetooth).
 
 ![PCB of WCH-Micro version 3](/wch_micro.jpg "PCB of WCH-Micro version 3")
 

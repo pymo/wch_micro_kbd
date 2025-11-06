@@ -291,10 +291,10 @@ uint8_t ConvertLayeredKey(struct KeyWithLayer* key_list, uint8_t key_num, uint8_
                 case HID_KEY_P:
                     key = HID_KEY_F10;
                     break;
-                case HID_KEY_SLASH:
+                case HID_KEY_MINUS:
                     key = HID_KEY_F11;
                     break;
-                case HID_KEY_MINUS:
+                case HID_KEY_EQUAL:
                     key = HID_KEY_F12;
                     break;
                 default:
@@ -308,7 +308,7 @@ uint8_t ConvertLayeredKey(struct KeyWithLayer* key_list, uint8_t key_num, uint8_
             PRINT("Not implemented key layer: %u \n", key_list[key_index].layer);
             break;
     }
-    PRINT("ConvertLayeredKey key=%u layer=%u sent=%u -> HID keycode %u\n", key_list[key_index].key, key_list[key_index].layer, key_list[key_index].sent, key);
+    // PRINT("ConvertLayeredKey key=%u layer=%u sent=%u -> HID keycode %u\n", key_list[key_index].key, key_list[key_index].layer, key_list[key_index].sent, key);
     return key;
 }
 void InitKeyboard(KeyboardBootState* k_state, uint32_t ms_current, uint32_t ms_last_state_change)
@@ -324,8 +324,8 @@ void InitKeyboard(KeyboardBootState* k_state, uint32_t ms_current, uint32_t ms_l
             }
             GPIOA_ModeCfg(GPIO_Pin_11, GPIO_ModeIN_Floating);
 
-            // On col 2,3,4 we are using analog voltage instead of digital I/O to read multiple keypress.
-            // So we need to find the lower bound of the high voltage, and use its 92% value as the threshold.
+            // On col 2,3,4 we are using analog voltage instead of digital I/O to read combined keypress.
+            // So we need to find the lower bound of the high voltage, and use that lower bound to calculate the threshold.
             // Set the rows of the matrix to be all high to avoid pulling down any column.
             ResetAllPinsStatus();
             uint32_t min_high_voltage = 100000;
