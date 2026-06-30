@@ -19,7 +19,14 @@ Open it to install, the setting instructions are as follows:
 
 - For G750 module: Press and hold the reset button with a needle/paper clip, then press and release the micro power switch, then release the reset button.
 
+- For Palm Ultra-thin Keyboard: Press and hold the reset button with a needle/paper clip (there is a hidden hole on the top side of the black cover), then press and release the micro power switch on the side, then release the reset button.
+
+
 ![Figure 2. Enter Download mode](/doc/images/enter_download_mode.jpg "Figure 2. Enter Download mode")
+
+
+![Figure 3. Palm Ultra-thin Keyboard reset button location](/doc/images/ultra_thin_reset.jpg "Figure 3. Palm Ultra-thin Keyboard reset button location")
+
 
 4. The firmware should start download automatically. There should be a prompt indicating that the download has succeeded, as shown in Figure 1.
 

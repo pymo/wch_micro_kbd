@@ -336,7 +336,7 @@ void InitKeyboard(KeyboardBootState* k_state, uint32_t ms_current, uint32_t ms_l
                 if( voltage > max_high_voltage) max_high_voltage = voltage;
             }
             uint32_t deviation = max_high_voltage-min_high_voltage;
-            high_voltage_threshold = min_high_voltage-(50>deviation?50:deviation);
+            high_voltage_threshold = min_high_voltage-(5>deviation?5:deviation);
             PRINT("min_high_voltage: %d, high_voltage_threshold %d\n", min_high_voltage, high_voltage_threshold);
             *k_state = K_STATE_6_ID_RECEIVED;
             break;
